@@ -4754,6 +4754,7 @@ local Library do
                 ModesDropdown = Dropdown
                 ModesDropdownItems = DropdownItems
 
+                local Toggle
                 local ToggleItems = { } do
                     ToggleItems["Toggle"] = Instances:Create("TextButton", {
                         Parent = Items["KeybindWindow"].Instance,
@@ -4856,7 +4857,7 @@ local Library do
 
                 getgenv().Options[Dropdown.Flag] = Dropdown
 
-                local Toggle = {
+                Toggle = {
                     Value = false,
                     Flag = Data.Flag .. "keybindToggle",
                     Callback = nil,
