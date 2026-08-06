@@ -1662,7 +1662,7 @@ local Library do
         end
 
         Instances.ChangeItemTheme = function(self, Properties)
-            if not self.Instance or not Library.ChangeItemTheme then
+            if not self or type(self) ~= "table" or not self.Instance or not Library.ChangeItemTheme then
                 return
             end
 
@@ -9266,22 +9266,27 @@ Library.Sections.Toggle = function(self, Data)
                     Page = self.Page,
                     Section = self,
 
-                    Name = Data.Name or Data.name or "Keybind",
+                    Name = Data.Name or Data.name or Toggle.Name or "Keybind",
                     Flag = Data.Flag or Data.flag or Library:NextFlag(),
                     Default = Data.Default or Data.default or Enum.KeyCode.RightShift,
-                    Callback = Data.Callback or Data.callback or function() end,
+                    Callback = Data.Callback or Data.callback,
                     Mode = Data.Mode or Data.mode or "Toggle",
                 }
 
                 local NewKeybind, KeybindItems = Components.Keybind({
                     Name = Keybind.Name,
-                    Parent = ToggleItems["Toggle"],
+                    Parent = ToggleItems["SubElements"],
                     Window = Toggle.Window,
                     Flag = Keybind.Flag,
                     Default = Keybind.Default,
                     IsToggle = true,
                     Mode = Keybind.Mode,
-                    Callback = Keybind.Callback
+                    Callback = function(State)
+                        Toggle:Set(State)
+                        if Keybind.Callback then
+                            Library:SafeCall(Keybind.Callback, State)
+                        end
+                    end
                 })
 
                 return NewKeybind
@@ -9361,14 +9366,18 @@ Library.Sections.Toggle = function(self, Data)
             end
 
             function Button:Press()
-                Items["Button"]:ChangeItemTheme({BackgroundColor3 = "Accent"})
-                Items["Button"]:Tween(nil, {BackgroundColor3 = Library.Theme.Accent})
+                if Items["Button"] then
+                    Items["Button"]:ChangeItemTheme({BackgroundColor3 = "Accent"})
+                    Items["Button"]:Tween(nil, {BackgroundColor3 = Library.Theme.Accent})
+                end
 
                 task.wait(0.1)
                 Library:SafeCall(Button.Callback)
 
-                Items["Button"]:ChangeItemTheme({BackgroundColor3 = "Element"})
-                Items["Button"]:Tween(nil, {BackgroundColor3 = Library.Theme.Element})
+                if Items["Button"] and Items["Button"].Instance and Items["Button"].Instance.Parent then
+                    Items["Button"]:ChangeItemTheme({BackgroundColor3 = "Element"})
+                    Items["Button"]:Tween(nil, {BackgroundColor3 = Library.Theme.Element})
+                end
             end
 
             function Button:SetVisibility(Bool)
