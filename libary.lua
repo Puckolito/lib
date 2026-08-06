@@ -4276,6 +4276,7 @@ local Library do
             local ModesDropdown
             local ModesDropdownItems
             local KeylistItem
+            local Toggle
 
             if Library.KeyList then
                 KeylistItem = Library.KeyList:Add("", "")
@@ -4754,7 +4755,6 @@ local Library do
                 ModesDropdown = Dropdown
                 ModesDropdownItems = DropdownItems
 
-                local Toggle
                 local ToggleItems = { } do
                     ToggleItems["Toggle"] = Instances:Create("TextButton", {
                         Parent = Items["KeybindWindow"].Instance,
@@ -4902,6 +4902,8 @@ local Library do
                     Toggle:Set(not Toggle.Value)
                 end)
 
+                Toggle:Set(true)
+
 
                 Dropdown.Callback = function(Value)
                     Keybind.Mode = string.lower(Value)
@@ -4924,6 +4926,10 @@ local Library do
                 if Keybind.Value == "None" or Keybind.Key == "None" or not Keybind.Key then
                     KeylistItem:SetVisibility(false)
                     return
+                end
+
+                if Toggle then
+                    KeylistItem:SetVisibility(Toggle.Value)
                 end
 
                 KeylistItem:SetText(Keybind.Value, Data.Name)
@@ -5198,8 +5204,6 @@ local Library do
             if Data.Default then
                Keybind:Set({Key = Data.Default, Mode = _initMode})
             end
-
-            Toggle:Set(true)
 
             Library.SetFlags[Data.Flag] = function(Value)
                 Keybind:Set(Value)
