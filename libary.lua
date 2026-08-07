@@ -10091,17 +10091,29 @@ local SaveManager = {} do
     SaveManager.Options = {}
     SaveManager.Library = nil
 
+    local function GetOptionObj(idx)
+        if SaveManager.Options and SaveManager.Options[idx] then
+            return SaveManager.Options[idx]
+        elseif getgenv().Options and getgenv().Options[idx] then
+            return getgenv().Options[idx]
+        elseif SaveManager.Library and SaveManager.Library.Options and SaveManager.Library.Options[idx] then
+            return SaveManager.Library.Options[idx]
+        end
+        return nil
+    end
+
     SaveManager.Parser = {
         Toggle = {
             Save = function(idx, object)
                 return { type = "Toggle", idx = idx, value = object.Value }
             end,
             Load = function(idx, data)
-                local obj = SaveManager.Options[idx]
+                local obj = GetOptionObj(idx)
+                local val = (data.value == true or data.value == "true")
                 if obj and obj.Set then
-                    obj:Set(data.value)
+                    obj:Set(val)
                 elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx](data.value)
+                    SaveManager.Library.SetFlags[idx](val)
                 end
             end,
         },
@@ -10110,7 +10122,7 @@ local SaveManager = {} do
                 return { type = "Slider", idx = idx, value = object.Value }
             end,
             Load = function(idx, data)
-                local obj = SaveManager.Options[idx]
+                local obj = GetOptionObj(idx)
                 local v = tonumber(data.value) or data.value
                 if obj and obj.Set then
                     obj:Set(v)
@@ -10124,11 +10136,19 @@ local SaveManager = {} do
                 return { type = "Dropdown", idx = idx, value = object.Value, multi = object.Multi }
             end,
             Load = function(idx, data)
-                local obj = SaveManager.Options[idx]
-                if obj and obj.Set then
-                    obj:Set(data.value)
+                local obj = GetOptionObj(idx)
+                local val = data.value
+                if obj then
+                    if obj.Multi and type(val) ~= "table" then
+                        val = { val }
+                    elseif not obj.Multi and type(val) == "table" then
+                        val = val[1]
+                    end
+                    if obj.Set then
+                        obj:Set(val)
+                    end
                 elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx](data.value)
+                    SaveManager.Library.SetFlags[idx](val)
                 end
             end,
         },
@@ -10140,9 +10160,11 @@ local SaveManager = {} do
                 return { type = "Colorpicker", idx = idx, value = hex, transparency = alpha }
             end,
             Load = function(idx, data)
-                local obj = SaveManager.Options[idx]
-                local color = Color3.fromHex(data.value or "ffffff")
-                local alpha = data.transparency or data.alpha or 1
+                local obj = GetOptionObj(idx)
+                local hexVal = tostring(data.value or "ffffff")
+                if hexVal:sub(1, 1) == "#" then hexVal = hexVal:sub(2) end
+                local color = Color3.fromHex(hexVal)
+                local alpha = tonumber(data.transparency or data.alpha) or 1
                 if obj and obj.Set then
                     obj:Set(color, alpha)
                 elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
@@ -10155,8 +10177,8 @@ local SaveManager = {} do
                 return { type = "Keybind", idx = idx, mode = object.Mode, key = object.Key or object.Value }
             end,
             Load = function(idx, data)
-                local obj = SaveManager.Options[idx]
-                local kData = { Key = data.key or data.value, Mode = data.mode }
+                local obj = GetOptionObj(idx)
+                local kData = { Key = data.key or data.value or "None", Mode = data.mode or "toggle" }
                 if obj and obj.Set then
                     obj:Set(kData)
                 elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
@@ -10169,11 +10191,11 @@ local SaveManager = {} do
                 return { type = "Input", idx = idx, text = object.Value }
             end,
             Load = function(idx, data)
-                local obj = SaveManager.Options[idx]
-                local txt = data.text or data.value or ""
-                if obj and obj.Set and type(txt) == "string" then
+                local obj = GetOptionObj(idx)
+                local txt = tostring(data.text or data.value or "")
+                if obj and obj.Set then
                     obj:Set(txt)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] and type(txt) == "string" then
+                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
                     SaveManager.Library.SetFlags[idx](txt)
                 end
             end,
@@ -10183,11 +10205,11 @@ local SaveManager = {} do
                 return { type = "Input", idx = idx, text = object.Value }
             end,
             Load = function(idx, data)
-                local obj = SaveManager.Options[idx]
-                local txt = data.text or data.value or ""
-                if obj and obj.Set and type(txt) == "string" then
+                local obj = GetOptionObj(idx)
+                local txt = tostring(data.text or data.value or "")
+                if obj and obj.Set then
                     obj:Set(txt)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] and type(txt) == "string" then
+                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
                     SaveManager.Library.SetFlags[idx](txt)
                 end
             end,
@@ -10210,7 +10232,12 @@ local SaveManager = {} do
             return false, "no config file is selected"
         end
 
-        local fullPath = self.Folder .. "/settings/" .. name .. ".json"
+        local cleanName = name
+        if cleanName:sub(-5):lower() == ".json" then
+            cleanName = cleanName:sub(1, -6)
+        end
+
+        local fullPath = self.Folder .. "/settings/" .. cleanName .. ".json"
         local data = { objects = {} }
 
         local optionsSource = self.Options
@@ -10240,7 +10267,12 @@ local SaveManager = {} do
             return false, "no config file is selected"
         end
 
-        local file = self.Folder .. "/settings/" .. name .. ".json"
+        local cleanName = name
+        if cleanName:sub(-5):lower() == ".json" then
+            cleanName = cleanName:sub(1, -6)
+        end
+
+        local file = self.Folder .. "/settings/" .. cleanName .. ".json"
         if not isfile(file) then return false, "invalid file" end
 
         local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
@@ -10248,8 +10280,16 @@ local SaveManager = {} do
 
         if decoded and decoded.objects then
             for _, option in next, decoded.objects do
-                if self.Parser[option.type] then
-                    task.spawn(function() self.Parser[option.type].Load(option.idx, option) end)
+                local optType = option.type
+                if optType then
+                    local parser = self.Parser[optType]
+                    if not parser and type(optType) == "string" and #optType > 0 then
+                        local capType = optType:sub(1, 1):upper() .. optType:sub(2):lower()
+                        parser = self.Parser[capType]
+                    end
+                    if parser and parser.Load then
+                        task.spawn(function() parser.Load(option.idx, option) end)
+                    end
                 end
             end
         end
