@@ -2452,7 +2452,8 @@ local Library do
         Components.Toggle = function(Data)
             local Toggle = {
                 Value = false,
-                Flag = Data.Flag
+                Flag = Data.Flag,
+                Type = "Toggle"
             }
 
             local Items = { } do
@@ -2808,37 +2809,56 @@ local Library do
             end
 
             function Dropdown:Set(Option)
+                if type(Option) == "number" or (type(Option) == "string" and tonumber(Option) and not Dropdown.Options[Option]) then
+                    local numIdx = tonumber(Option)
+                    local count = 0
+                    for optKey, optObj in pairs(Dropdown.Options) do
+                        count = count + 1
+                        if count == numIdx then
+                            Option = optObj.RealName or optObj.Name or optKey
+                            break
+                        end
+                    end
+                end
+
                 if Data.Multi then
                     if type(Option) ~= "table" then
-                        return
+                        Option = { Option }
                     end
 
                     Dropdown.Value = Option
                     Library.Flags[Dropdown.Flag] = Option
 
-                    for Index, Value in Option do
+                    for Index, Value in pairs(Option) do
                         local OptionData = Dropdown.Options[Value]
-
-                        if not OptionData then
-                            return
+                        if OptionData then
+                            OptionData.Selected = true
+                            OptionData:Toggle("Active")
                         end
-
-                        OptionData.Selected = true
-                        OptionData:Toggle("Active")
                     end
 
                     Items["Value"].Instance.Text = TableConcat(Option, ", ")
                 else
-                    if not Dropdown.Options[Option] then
+                    if type(Option) == "table" then
+                        Option = Option[1]
+                    end
+                    local OptionData = Dropdown.Options[Option]
+                    if not OptionData then
+                        for optKey, optObj in pairs(Dropdown.Options) do
+                            if optObj.RealName == Option or optObj.Name == Option then
+                                OptionData = optObj
+                                break
+                            end
+                        end
+                    end
+                    if not OptionData then
                         return
                     end
 
-                    local OptionData = Dropdown.Options[Option]
+                    Dropdown.Value = OptionData.RealName or OptionData.Name
+                    Library.Flags[Dropdown.Flag] = Dropdown.Value
 
-                    Dropdown.Value = OptionData.Name
-                    Library.Flags[Dropdown.Flag] = OptionData.Name
-
-                    for Index, Value in Dropdown.Options do
+                    for Index, Value in pairs(Dropdown.Options) do
                         if Value ~= OptionData then
                             Value.Selected = false
                             Value:Toggle("Inactive")
@@ -2848,7 +2868,7 @@ local Library do
                         end
                     end
 
-                    Items["Value"].Instance.Text = OptionData.Name
+                    Items["Value"].Instance.Text = OptionData.RealName or OptionData.Name
                 end
 
                 if Data.Callback then
@@ -9204,6 +9224,7 @@ Library.Sections.Toggle = function(self, Data)
                 Default = Data.Default or Data.default or false,
                 Callback = Data.Callback or Data.callback or function() end,
                 Tooltip = Data.Tooltip or Data.tooltip or nil,
+                Type = "Toggle",
 
                 Count = 0
             }
@@ -9427,6 +9448,7 @@ Library.Sections.Toggle = function(self, Data)
                 Step = Data.Step or Data.step or Data.Increment or Data.increment or Data.Rounding or Data.rounding or Data.Decimals or Data.decimals or 1,
                 Tooltip = Data.Tooltip or Data.tooltip or nil,
                 Callback = Data.Callback or Data.callback or function() end,
+                Type = "Slider",
 
                 Sliding = false,
                 Value = 0
@@ -9879,6 +9901,7 @@ Library.Sections.Toggle = function(self, Data)
                 Default = Data.Default or Data.default or "",
                 Callback = Data.Callback or Data.callback or function() end,
                 Tooltip = Data.Tooltip or Data.tooltip or nil,
+                Type = "Input",
 
                 Value = "",
             }
@@ -10248,8 +10271,26 @@ local SaveManager = {} do
         for idx, option in pairs(optionsSource) do
             if self.Ignore[idx] then continue end
             local optType = option.Type
-            if optType and self.Parser[optType] then
-                table.insert(data.objects, self.Parser[optType].Save(idx, option))
+            if not optType then
+                if type(option.Value) == "boolean" then
+                    optType = "Toggle"
+                elseif type(option.Value) == "number" or option.Min or option.Max then
+                    optType = "Slider"
+                elseif option.Items or option.Options then
+                    optType = "Dropdown"
+                elseif type(option.Value) == "string" then
+                    optType = "Input"
+                end
+            end
+            if optType then
+                local parser = self.Parser[optType]
+                if not parser and type(optType) == "string" and #optType > 0 then
+                    local capType = optType:sub(1, 1):upper() .. optType:sub(2):lower()
+                    parser = self.Parser[capType]
+                end
+                if parser and parser.Save then
+                    table.insert(data.objects, parser.Save(idx, option))
+                end
             end
         end
 
