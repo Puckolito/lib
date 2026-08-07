@@ -10011,8 +10011,8 @@ Library.Sections.Toggle = function(self, Data)
             TableInsert(PageSearchData, SearchData)
 
             Items["Input"]:Connect("Focused", function()
-                Items["Input"]:ChangeItemTheme({TextColor3 = "Accent", PlaceholderColor3 = "Text Inactive"})
-                Items["Input"]:Tween(nil, {TextColor3 = Library.Theme.Accent})
+                Items["Input"]:ChangeItemTheme({TextColor3 = "Text", PlaceholderColor3 = "Inactive Text"})
+                Items["Input"]:Tween(nil, {TextColor3 = Library.Theme.Text})
             end)
 
             Items["Input"]:Connect("FocusLost", function()
