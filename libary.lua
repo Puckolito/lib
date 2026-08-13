@@ -4516,7 +4516,8 @@ local Library do
                     Value = { },
                     Options = { },
                     Flag = Data.Flag .. "ModeDropdown",
-                    Multi = false
+                    Multi = false,
+                    Type = "Dropdown"
                 }
 
                 function Dropdown:AddOption(Option)
@@ -4880,6 +4881,7 @@ local Library do
                 Toggle = {
                     Value = false,
                     Flag = Data.Flag .. "keybindToggle",
+                    Type = "Toggle",
                     Callback = nil,
                 }
 
@@ -10125,6 +10127,27 @@ local SaveManager = {} do
         return nil
     end
 
+    -- Type alias map for case-insensitive + alternate name resolution
+    local TypeAliases = {
+        toggle = "Toggle", Toggle = "Toggle",
+        slider = "Slider", Slider = "Slider",
+        dropdown = "Dropdown", Dropdown = "Dropdown",
+        colorpicker = "Colorpicker", Colorpicker = "Colorpicker", ColorPicker = "Colorpicker", color = "Colorpicker",
+        keybind = "Keybind", Keybind = "Keybind", KeyBind = "Keybind", bind = "Keybind",
+        input = "Input", Input = "Input", textbox = "Input", Textbox = "Input", TextBox = "Input",
+    }
+
+    local function ResolveParser(typeName)
+        if not typeName or type(typeName) ~= "string" then return nil end
+        local canonical = TypeAliases[typeName]
+        if canonical then return SaveManager.Parser[canonical] end
+        -- Fallback: try exact match then capitalized
+        local p = SaveManager.Parser[typeName]
+        if p then return p end
+        local cap = typeName:sub(1,1):upper() .. typeName:sub(2):lower()
+        return SaveManager.Parser[cap]
+    end
+
     SaveManager.Parser = {
         Toggle = {
             Save = function(idx, object)
@@ -10135,7 +10158,7 @@ local SaveManager = {} do
                 local val = (data.value == true or data.value == "true")
                 if obj and obj.Set then
                     obj:Set(val)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
                     SaveManager.Library.SetFlags[idx](val)
                 end
             end,
@@ -10146,17 +10169,17 @@ local SaveManager = {} do
             end,
             Load = function(idx, data)
                 local obj = GetOptionObj(idx)
-                local v = tonumber(data.value) or data.value
-                if obj and obj.Set then
+                local v = tonumber(data.value)
+                if v and obj and obj.Set then
                     obj:Set(v)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
+                elseif v and SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
                     SaveManager.Library.SetFlags[idx](v)
                 end
             end,
         },
         Dropdown = {
             Save = function(idx, object)
-                return { type = "Dropdown", idx = idx, value = object.Value, multi = object.Multi }
+                return { type = "Dropdown", idx = idx, value = object.Value, multi = object.Multi or false }
             end,
             Load = function(idx, data)
                 local obj = GetOptionObj(idx)
@@ -10170,14 +10193,29 @@ local SaveManager = {} do
                     if obj.Set then
                         obj:Set(val)
                     end
-                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
                     SaveManager.Library.SetFlags[idx](val)
                 end
             end,
         },
         Colorpicker = {
             Save = function(idx, object)
-                local col = object.Color or (type(object.Value) == "table" and object.Value.Color3) or Color3.new(1, 1, 1)
+                -- Read color from multiple possible sources
+                local col
+                if object.HexValue then
+                    -- Direct hex stored on colorpicker
+                    return { type = "Colorpicker", idx = idx, value = object.HexValue, transparency = object.Alpha or 1 }
+                end
+                local flagData = Library and Library.Flags and Library.Flags[idx]
+                if flagData and type(flagData) == "table" and flagData.Color then
+                    -- Library.Flags stores {Alpha, Color (hex), Color3}
+                    return { type = "Colorpicker", idx = idx, value = flagData.Color, transparency = flagData.Alpha or object.Alpha or 1 }
+                end
+                col = object.Color or (type(object.Value) == "table" and object.Value.Color3) or nil
+                if not col and object.Hue and object.Saturation and object.Brightness then
+                    col = Color3.fromHSV(object.Hue, object.Saturation, object.Brightness)
+                end
+                col = col or Color3.new(1, 1, 1)
                 local alpha = object.Alpha or (type(object.Value) == "table" and object.Value.Alpha) or 1
                 local hex = typeof(col) == "Color3" and col:ToHex() or "ffffff"
                 return { type = "Colorpicker", idx = idx, value = hex, transparency = alpha }
@@ -10186,53 +10224,60 @@ local SaveManager = {} do
                 local obj = GetOptionObj(idx)
                 local hexVal = tostring(data.value or "ffffff")
                 if hexVal:sub(1, 1) == "#" then hexVal = hexVal:sub(2) end
-                local color = Color3.fromHex(hexVal)
+                local ok, color = pcall(Color3.fromHex, hexVal)
+                if not ok then color = Color3.new(1, 1, 1) end
                 local alpha = tonumber(data.transparency or data.alpha) or 1
                 if obj and obj.Set then
                     obj:Set(color, alpha)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
                     SaveManager.Library.SetFlags[idx](color, alpha)
                 end
             end,
         },
         Keybind = {
             Save = function(idx, object)
-                return { type = "Keybind", idx = idx, mode = object.Mode, key = object.Key or object.Value }
+                return {
+                    type = "Keybind",
+                    idx = idx,
+                    key = object.Key or object.Value or "None",
+                    mode = object.Mode or "toggle",
+                    toggled = object.Toggled or false
+                }
             end,
             Load = function(idx, data)
                 local obj = GetOptionObj(idx)
-                local kData = { Key = data.key or data.value or "None", Mode = data.mode or "toggle" }
+                local kData = {
+                    Key = data.key or data.value or "None",
+                    Mode = data.mode or "toggle"
+                }
                 if obj and obj.Set then
                     obj:Set(kData)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
+                    -- Restore toggled state after setting key/mode
+                    if data.toggled ~= nil then
+                        obj.Toggled = (data.toggled == true or data.toggled == "true")
+                        if Library and Library.Flags then
+                            Library.Flags[idx] = {
+                                Mode = obj.Mode,
+                                Key = obj.Key,
+                                Toggled = obj.Toggled
+                            }
+                        end
+                    end
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
                     SaveManager.Library.SetFlags[idx](kData)
                 end
             end,
         },
         Input = {
             Save = function(idx, object)
-                return { type = "Input", idx = idx, text = object.Value }
+                return { type = "Input", idx = idx, text = tostring(object.Value or "") }
             end,
             Load = function(idx, data)
                 local obj = GetOptionObj(idx)
                 local txt = tostring(data.text or data.value or "")
                 if obj and obj.Set then
                     obj:Set(txt)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx](txt)
-                end
-            end,
-        },
-        Textbox = {
-            Save = function(idx, object)
-                return { type = "Input", idx = idx, text = object.Value }
-            end,
-            Load = function(idx, data)
-                local obj = GetOptionObj(idx)
-                local txt = tostring(data.text or data.value or "")
-                if obj and obj.Set then
-                    obj:Set(txt)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags[idx] then
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
                     SaveManager.Library.SetFlags[idx](txt)
                 end
             end,
@@ -10268,28 +10313,41 @@ local SaveManager = {} do
             optionsSource = getgenv().Options or (self.Library and self.Library.Options) or {}
         end
 
+        -- Auto-ignore internal sub-elements before saving (keybind mode dropdowns, keybind toggles, colorpicker animation dropdowns)
+        for idx, _ in pairs(optionsSource) do
+            if type(idx) == "string" then
+                if idx:match("ModeDropdown$") or idx:match("keybindToggle$") or idx:match("AnimationDropdown$") then
+                    self.Ignore[idx] = true
+                end
+            end
+        end
+
         for idx, option in pairs(optionsSource) do
             if self.Ignore[idx] then continue end
             local optType = option.Type
+            -- Auto-detect type if not explicitly set
             if not optType then
-                if type(option.Value) == "boolean" then
+                if option.Key ~= nil or option.Toggled ~= nil or option.Picking ~= nil then
+                    optType = "Keybind"
+                elseif option.HexValue ~= nil or (option.Hue ~= nil and option.Saturation ~= nil) then
+                    optType = "Colorpicker"
+                elseif type(option.Value) == "boolean" then
                     optType = "Toggle"
-                elseif type(option.Value) == "number" or option.Min or option.Max then
+                elseif type(option.Value) == "number" or option.Min ~= nil or option.Max ~= nil then
                     optType = "Slider"
-                elseif option.Items or option.Options then
+                elseif option.Options ~= nil or option.Items ~= nil then
                     optType = "Dropdown"
                 elseif type(option.Value) == "string" then
                     optType = "Input"
                 end
             end
             if optType then
-                local parser = self.Parser[optType]
-                if not parser and type(optType) == "string" and #optType > 0 then
-                    local capType = optType:sub(1, 1):upper() .. optType:sub(2):lower()
-                    parser = self.Parser[capType]
-                end
+                local parser = ResolveParser(optType)
                 if parser and parser.Save then
-                    table.insert(data.objects, parser.Save(idx, option))
+                    local ok, entry = pcall(parser.Save, idx, option)
+                    if ok and entry then
+                        table.insert(data.objects, entry)
+                    end
                 end
             end
         end
@@ -10320,16 +10378,29 @@ local SaveManager = {} do
         if not success then return false, "decode error" end
 
         if decoded and decoded.objects then
+            -- Sort load order: Toggles first, then Sliders, Dropdowns, Colorpickers, Keybinds, Inputs last
+            -- This ensures dependencies resolve correctly (e.g. toggle state before keybind)
+            local loadOrder = { Toggle = 1, Slider = 2, Dropdown = 3, Colorpicker = 4, Keybind = 5, Input = 6 }
+            local sorted = {}
             for _, option in next, decoded.objects do
+                table.insert(sorted, option)
+            end
+            table.sort(sorted, function(a, b)
+                local aType = TypeAliases[a.type or ""] or a.type or ""
+                local bType = TypeAliases[b.type or ""] or b.type or ""
+                return (loadOrder[aType] or 99) < (loadOrder[bType] or 99)
+            end)
+
+            -- Load all elements synchronously — no coroutine overhead, instant apply
+            for _, option in ipairs(sorted) do
                 local optType = option.type
                 if optType then
-                    local parser = self.Parser[optType]
-                    if not parser and type(optType) == "string" and #optType > 0 then
-                        local capType = optType:sub(1, 1):upper() .. optType:sub(2):lower()
-                        parser = self.Parser[capType]
-                    end
+                    local parser = ResolveParser(optType)
                     if parser and parser.Load then
-                        task.spawn(function() parser.Load(option.idx, option) end)
+                        local ok, err = pcall(parser.Load, option.idx, option)
+                        if not ok then
+                            warn("[SaveManager] Failed to load " .. tostring(option.idx) .. ": " .. tostring(err))
+                        end
                     end
                 end
             end
@@ -10505,6 +10576,20 @@ local SaveManager = {} do
         })
 
         SaveManager:SetIgnoreIndexes({ "SaveManager_ConfigList", "SaveManager_ConfigName" })
+    end
+
+    function SaveManager:AutoIgnoreSubElements()
+        local optionsSource = self.Options
+        if not optionsSource or next(optionsSource) == nil then
+            optionsSource = getgenv().Options or {}
+        end
+        for idx, _ in pairs(optionsSource) do
+            if type(idx) == "string" then
+                if idx:match("ModeDropdown$") or idx:match("keybindToggle$") or idx:match("AnimationDropdown$") then
+                    self.Ignore[idx] = true
+                end
+            end
+        end
     end
 
     SaveManager:BuildFolderTree()
