@@ -2242,6 +2242,38 @@ local Library do
         return getcustomasset(self.Folders.Assets .. "/" .. ImageData[1])
     end
 
+    Library.ResolveAsset = function(self, val)
+        if not val or val == "" or val == 0 or tostring(val) == "0" then
+            return "", false, nil
+        end
+        local raw = tostring(val):gsub("^%s+", ""):gsub("%s+$", "")
+        local urlId = raw:match("/asset/(%d+)") or raw:match("id=(%d+)") or raw:match("/library/(%d+)")
+        if urlId then
+            return "rbxthumb://type=Asset&id=" .. urlId .. "&w=420&h=420", true, nil
+        end
+        if raw:find("rbxthumb://") or raw:find("rbxasset://") or raw:find("http://") or raw:find("https://") then
+            return raw, true, nil
+        end
+        if raw:find("rbxassetid://") then
+            local num = raw:match("(%d+)")
+            if num then
+                return "rbxthumb://type=Asset&id=" .. num .. "&w=420&h=420", true, nil
+            end
+            return raw, true, nil
+        end
+        if tonumber(raw) then
+            return "rbxthumb://type=Asset&id=" .. raw .. "&w=420&h=420", true, nil
+        end
+        local lm = getgenv and getgenv().LucideModule
+        if lm then
+            local ok, lData = pcall(lm.GetAsset, raw, 24)
+            if ok and lData and lData.Url then
+                return lData.Url, true, lData
+            end
+        end
+        return raw, true, nil
+    end
+
     Library.Round = function(self, Number, Float)
         Number = tonumber(Number) or 0
         local Multiplier = (Float and Float ~= 0) and (1 / Float) or 1
@@ -7365,13 +7397,16 @@ local Library do
                 })
 
                 if Notification.Icon then
+                    local _resolvedIcon, _hasIcon, _lucide = Library:ResolveAsset(Notification.Icon)
                     Items["Icon"] = Instances:Create("ImageLabel", {
                         Parent = Items["Notification"].Instance,
                         Name = "\0",
                         ImageColor3 = Notification.IconColor,
                         BorderColor3 = FromRGB(0, 0, 0),
                         AnchorPoint = Vector2New(1, 0),
-                        Image = "rbxassetid://"..Notification.Icon,
+                        Image = _resolvedIcon,
+                        ImageRectSize = _lucide and _lucide.ImageRectSize or Vector2New(0, 0),
+                        ImageRectOffset = _lucide and _lucide.ImageRectOffset or Vector2New(0, 0),
                         BackgroundTransparency = 1,
                         Position = UDim2New(1, 5, 0, 0),
                         Size = UDim2New(0, 22, 0, 22),
@@ -7476,11 +7511,11 @@ local Library do
             return Notification
         end
 
-        Library.Watermark = function(self, Text, Logo)
+        Library.Watermark = function(self, Text, Logo, LogoColor)
             local Watermark = { }
-            Text = Text or (self.CurrentWindow and self.CurrentWindow.Name) or "kiwisense"
-            Logo = Logo or (self.CurrentWindow and self.CurrentWindow.Logo) or "135215559087473"
-            local _hasLogo = Logo and Logo ~= 0 and tostring(Logo) ~= "0" and tostring(Logo) ~= ""
+            Text = Text or (self.CurrentWindow and self.CurrentWindow.Name) or "Merquryhub"
+            Logo = Logo or (self.CurrentWindow and self.CurrentWindow.Logo) or "99625375324748"
+            local _resolvedLogo, _hasLogo = Library:ResolveAsset(Logo)
 
             local Items = { } do
                 Items["Watermark"] = Instances:Create("Frame", {
@@ -7517,19 +7552,22 @@ local Library do
                 Items["Logo"] = Instances:Create("ImageLabel", {
                     Parent = Items["Watermark"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(195, 145, 85),
+                    ImageColor3 = LogoColor or FromRGB(255, 255, 255),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = _hasLogo and UDim2New(0, 22, 0, 22) or UDim2New(0, 0, 0, 0),
                     AnchorPoint = Vector2New(0, 0.5),
-                    Image = _hasLogo and ("rbxassetid://"..tostring(Logo)) or "",
+                    Image = _resolvedLogo,
                     Visible = _hasLogo,
                     BackgroundTransparency = 1,
                     Position = UDim2New(0, 10, 0.5, 0),
                     ZIndex = 99999,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
-                })  Items["Logo"]:AddToTheme({ImageColor3 = "Accent"})
+                })
+                if LogoColor then
+                    Items["Logo"]:AddToTheme({ImageColor3 = "Accent"})
+                end
 
                 Items["Text"] = Instances:Create("TextLabel", {
                     Parent = Items["Watermark"].Instance,
@@ -7746,8 +7784,9 @@ local Library do
             Data = Data or { }
 
             local Window = {
-                Name = Data.Name or Data.name or "kiwisense",
-                Logo = Data.Logo or Data.logo or "135215559087473",
+                Name = Data.Name or Data.name or "Merquryhub",
+                Logo = Data.Logo or Data.logo or "99625375324748",
+                LogoColor = Data.LogoColor or Data.logocolor,
                 FadeSpeed = Data.FadeSpeed or Data.fadespeed or 0.2,
                 Version = Data.Version or Data.version or "v1.0.0 alpha",
                 Size = Data.Size or Data.size or (UserInputService.TouchEnabled and UDim2New(0, 659, 0, 340) or UDim2New(0, 659, 0, 511)),
@@ -7900,24 +7939,27 @@ local Library do
                     return RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, Library.Theme["Dark Gradient"])}
                 end})
 
-                local _hasLogo = Window.Logo and Window.Logo ~= 0 and tostring(Window.Logo) ~= "0" and Window.Logo ~= ""
+                local _resolvedLogo, _hasLogo = Library:ResolveAsset(Window.Logo)
 
                 Items["Logo"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(195, 145, 85),
+                    ImageColor3 = Window.LogoColor or FromRGB(255, 255, 255),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = _hasLogo and UDim2New(0, 22, 0, 22) or UDim2New(0, 0, 0, 0),
                     AnchorPoint = Vector2New(0, 0.5),
-                    Image = _hasLogo and ("rbxassetid://"..Window.Logo) or "",
+                    Image = _resolvedLogo,
                     BackgroundTransparency = 1,
                     Position = UDim2New(0, 10, 0.5, 0),
                     Visible = _hasLogo,
                     ZIndex = 2,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
-                })  Items["Logo"]:AddToTheme({ImageColor3 = "Accent"})
+                })
+                if Window.LogoColor then
+                    Items["Logo"]:AddToTheme({ImageColor3 = "Accent"})
+                end
 
                 Items["Title"] = Instances:Create("TextLabel", {
                     Parent = Items["Topbar"].Instance,
@@ -8156,11 +8198,14 @@ local Library do
 
                     Items["FloatingButton"]:MakeDraggable()
 
+                    local _resolvedFloatingLogo = Library:ResolveAsset(Window.Logo)
                     Instances:Create("ImageLabel", {
                         Parent = Items["FloatingButton"].Instance,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Name = "\0",
-                        Image = "rbxassetid://" .. Window.Logo,
+                        Image = _resolvedFloatingLogo,
+                        ImageColor3 = Window.LogoColor or FromRGB(255, 255, 255),
+                        ScaleType = Enum.ScaleType.Fit,
                         BackgroundTransparency = 1,
                         AnchorPoint = Vector2New(0.5, 0.5),
                         Position = UDim2New(0.5, 0, 0.5, 0),
@@ -8516,24 +8561,7 @@ local Library do
                     CornerRadius = UDimNew(1, 0)
                 })
 
-                local _resolvedImage = ""
-                local _hasIcon = false
-                local _lucideData = nil
-                if Page.Icon and Page.Icon ~= "" then
-                    if tonumber(Page.Icon) then
-                        _resolvedImage = "rbxassetid://" .. Page.Icon
-                        _hasIcon = true
-                    else
-                        local lm = getgenv and getgenv().LucideModule
-                        if lm then
-                            _lucideData = lm.GetAsset(Page.Icon, 24)
-                        end
-                        if _lucideData then
-                            _resolvedImage = _lucideData.Url
-                            _hasIcon = true
-                        end
-                    end
-                end
+                local _resolvedImage, _hasIcon, _lucideData = Library:ResolveAsset(Page.Icon)
 
                 Items["Icon"] = Instances:Create("ImageLabel", {
                     Parent = Items["Inactive"].Instance,
@@ -8808,18 +8836,23 @@ local Library do
                     CornerRadius = UDimNew(1, 0)
                 })
 
+                local _subResolved, _hasSubIcon, _subLucide = Library:ResolveAsset(SubPage.Icon)
+
                 Items["Icon"] = Instances:Create("ImageLabel", {
                     Parent = Items["Inactive"].Instance,
                     Name = "\0",
                     ImageTransparency = 0.5,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(0, 22, 0, 22),
+                    Size = _hasSubIcon and UDim2New(0, 22, 0, 22) or UDim2New(0, 0, 0, 0),
                     AnchorPoint = Vector2New(0, 0.5),
-                    Image = "rbxassetid://"..SubPage.Icon,
+                    Image = _subResolved,
+                    ImageRectSize = _subLucide and _subLucide.ImageRectSize or Vector2.new(0, 0),
+                    ImageRectOffset = _subLucide and _subLucide.ImageRectOffset or Vector2.new(0, 0),
                     BackgroundTransparency = 1,
                     Position = UDim2New(0, 5, 0.5, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
+                    Visible = _hasSubIcon,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Icon"]:AddToTheme({ImageColor3 = "Image"})
 
@@ -9844,19 +9877,24 @@ local Library do
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
 
+                local _secResolved, _hasSecIcon, _secLucide = Library:ResolveAsset(Section.Icon)
+
                 Items["Icon"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
                     ImageColor3 = FromRGB(195, 145, 85),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(0, 18, 0, 18),
+                    Size = _hasSecIcon and UDim2New(0, 18, 0, 18) or UDim2New(0, 0, 0, 0),
                     AnchorPoint = Vector2New(1, 0.5),
-                    Image = "rbxassetid://"..Section.Icon,
+                    Image = _secResolved,
+                    ImageRectSize = _secLucide and _secLucide.ImageRectSize or Vector2.new(0, 0),
+                    ImageRectOffset = _secLucide and _secLucide.ImageRectOffset or Vector2.new(0, 0),
                     BackgroundTransparency = 1,
                     Position = UDim2New(1, -7, 0.5, -1),
                     ZIndex = 2,
                     BorderSizePixel = 0,
+                    Visible = _hasSecIcon,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Icon"]:AddToTheme({ImageColor3 = "Accent"})
 
