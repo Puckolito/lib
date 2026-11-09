@@ -2,6 +2,38 @@
 
 local LoadingTick = os.clock()
 
+if not game:IsLoaded() then
+    pcall(function() game.Loaded:Wait() end)
+end
+
+local cloneref = cloneref or function(o) return o end
+
+local function GetSafeGuiParent()
+    if gethui then
+        local ok, res = pcall(gethui)
+        if ok and res then return res end
+    end
+    local ok, coregui = pcall(function()
+        return cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
+    end)
+    if ok and coregui then
+        local canParent = pcall(function()
+            local test = Instance.new("Folder")
+            test.Parent = coregui
+            test:Destroy()
+        end)
+        if canParent then return coregui end
+    end
+    local lp = game:GetService("Players").LocalPlayer
+    if lp then
+        local pg = lp:FindFirstChildOfClass("PlayerGui") or lp:WaitForChild("PlayerGui", 5)
+        if pg then return pg end
+    end
+    return game:GetService("CoreGui")
+end
+
+local gethui = gethui or GetSafeGuiParent
+
 if getgenv().Library then
     getgenv().Library:Unload()
 end
@@ -59,12 +91,12 @@ local Options, MiscOptions do
 
         ["Boxes"] = false;
         ["BoxType"] = "Corner";
-        ["Box Gradient 1"] = { Color = rgb(170, 130, 255), Transparency = 0.9 };
+        ["Box Gradient 1"] = { Color = rgb(195, 145, 85), Transparency = 0.9 };
         ["Box Gradient 2"] = { Color = rgb(255, 0, 0), Transparency = 0.4 };
         ["Box Gradient Rotation"] = 90;
         ["Box Fill"] = false;
-        ["Box Fill 1"] = { Color = rgb(170, 130, 255), Transparency = 0.9 };
-        ["Box Fill 2"] = { Color = rgb(170, 130, 255), Transparency = 0.9 };
+        ["Box Fill 1"] = { Color = rgb(195, 145, 85), Transparency = 0.9 };
+        ["Box Fill 2"] = { Color = rgb(195, 145, 85), Transparency = 0.9 };
         ["Box Fill Rotation"] = 0;
 
         ["Healthbar"] = false;
@@ -133,22 +165,42 @@ local Options, MiscOptions do
         }
 
         for name, suffix in FontNames do
-            local RegisteredFont = RegisterFont(name, 400, "Normal", {
-                Id = suffix,
-                Font = game:HttpGet("https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/" .. suffix),
-            })
-
-            Fonts[name] = Font.new(RegisteredFont, Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            local success, fontData = pcall(function()
+                return game:HttpGet("https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/" .. suffix)
+            end)
+            if success and fontData then
+                local regOk, registeredFont = pcall(RegisterFont, name, 400, "Normal", {
+                    Id = suffix,
+                    Font = fontData,
+                })
+                if regOk and registeredFont then
+                    local fOk, fInst = pcall(function()
+                        return Font.new(registeredFont, Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+                    end)
+                    if fOk and fInst then
+                        Fonts[name] = fInst
+                    else
+                        Fonts[name] = Font.fromEnum(Enum.Font.Gotham)
+                    end
+                else
+                    Fonts[name] = Font.fromEnum(Enum.Font.Gotham)
+                end
+            else
+                Fonts[name] = Font.fromEnum(Enum.Font.Gotham)
+            end
         end
     end
 
+    local safeEspGuiParent = GetSafeGuiParent()
     getgenv().Esp = {
         Players = {},
-        ScreenGui = Instance.new("ScreenGui", gethui()),
-        Cache = Instance.new("ScreenGui", gethui()),
+        ScreenGui = Instance.new("ScreenGui", safeEspGuiParent),
+        Cache = Instance.new("ScreenGui", safeEspGuiParent),
         Connections = {},
     }; do
         Esp.ScreenGui.IgnoreGuiInset = true
+        Esp.ScreenGui.DisplayOrder = 9999999
+        Esp.ScreenGui.ResetOnSpawn = false
         Esp.ScreenGui.Name = "EspObject"
 
         Esp.Cache.Enabled = false
@@ -1281,8 +1333,23 @@ local Library do
     local CoreGui = cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
 
     local LocalPlayer = Players.LocalPlayer
-    local Camera = Workspace.CurrentCamera
-    local Mouse = LocalPlayer:GetMouse()
+    if not LocalPlayer then
+        pcall(function()
+            LocalPlayer = Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.LocalPlayer
+        end)
+        if not LocalPlayer then
+            repeat task.wait() LocalPlayer = Players.LocalPlayer until LocalPlayer or not game
+        end
+    end
+    local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildOfClass("Camera")
+    local function GetCamera()
+        if not Camera or not Camera.Parent then
+            Camera = Workspace.CurrentCamera or Workspace:FindFirstChildOfClass("Camera")
+        end
+        return Camera
+    end
+    local Mouse
+    pcall(function() if LocalPlayer then Mouse = LocalPlayer:GetMouse() end end)
 
     local FromRGB = Color3.fromRGB
     local FromHSV = Color3.fromHSV
@@ -1470,22 +1537,27 @@ local Library do
     Library.Sections.__index = Library.Sections
     Library.Pages.__index = Library.Pages
 
-    for Index, Value in Library.Folders do
-        if not isfolder(Value) then
-            makefolder(Value)
+    pcall(function()
+        for Index, Value in Library.Folders do
+            if isfolder and not isfolder(Value) and makefolder then
+                makefolder(Value)
+            end
         end
-    end
 
-    for Index, Value in Library.Images do
-        local ImageData = Value
+        for Index, Value in Library.Images do
+            local ImageData = Value
+            local ImageName = ImageData[1]
+            local ImageLink = ImageData[2]
+            local imgPath = Library.Folders.Assets .. "/" .. ImageName
 
-        local ImageName = ImageData[1]
-        local ImageLink = ImageData[2]
-
-        if not isfile(Library.Folders.Assets .. "/" .. ImageName) then
-            writefile(Library.Folders.Assets .. "/" .. ImageName, game:HttpGet(ImageLink))
+            if isfile and not isfile(imgPath) and writefile then
+                local ok, imgData = pcall(game.HttpGet, game, ImageLink)
+                if ok and imgData then
+                    writefile(imgPath, imgData)
+                end
+            end
         end
-    end
+    end)
 
     local Tween = { } do
         Tween.__index = Tween
@@ -1717,7 +1789,7 @@ local Library do
         end
 
         Instances.Tooltip = function(self, Text)
-            if Text == nil or type(Text) ~= "string" then
+            if Text == nil or type(Text) ~= "string" or Text:gsub("%s+", "") == "" then
                 return
             end
 
@@ -1735,9 +1807,9 @@ local Library do
                 Name = "\0",
                 BorderColor3 = FromRGB(0, 0, 0),
                 BackgroundTransparency = 1,
-                Position = UDim2New(0, MouseLocation.X, 0, MouseLocation.Y - 38),
+                Position = UDim2New(0, MouseLocation.X + 12, 0, MouseLocation.Y - 24),
                 BorderSizePixel = 0,
-                ZIndex = 2,
+                ZIndex = 9999,
                 AutomaticSize = Enum.AutomaticSize.XY,
                 BackgroundColor3 = FromRGB(16, 18, 21)
             })  Newtooltip:AddToTheme({BackgroundColor3 = "Background"})
@@ -1755,8 +1827,8 @@ local Library do
                 Name = "\0",
                 PaddingTop = UDimNew(0, 5),
                 PaddingBottom = UDimNew(0, 5),
-                PaddingRight = UDimNew(0, 5),
-                PaddingLeft = UDimNew(0, 5)
+                PaddingRight = UDimNew(0, 8),
+                PaddingLeft = UDimNew(0, 8)
             })
 
             local TooltipText = Instances:Create("TextLabel", {
@@ -1770,9 +1842,9 @@ local Library do
                 BackgroundTransparency = 1,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 BorderSizePixel = 0,
-                ZIndex = 2,
+                ZIndex = 10000,
                 TextTransparency = 1,
-                TextSize = 14,
+                TextSize = 13,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })
 
@@ -1783,6 +1855,11 @@ local Library do
             })
 
             Library:Connect(Gui.MouseEnter, function()
+                if RenderStepped then
+                    RenderStepped:Disconnect()
+                    RenderStepped = nil
+                end
+
                 Newtooltip:Tween(nil, {BackgroundTransparency = 0.15})
                 TooltipText:Tween(nil, {TextTransparency = 0})
                 UIStroke:Tween(nil, {Transparency = 0.4})
@@ -1942,37 +2019,60 @@ local Library do
 
     local CustomFont = { } do
         function CustomFont:New(Name, Weight, Style, Data)
-            if isfile(Library.Folders.Assets .. "/" .. Name .. ".json") then
-                return Font.new(getcustomasset(Library.Folders.Assets .. "/" .. Name .. ".json"))
+            local jsonPath = Library.Folders.Assets .. "/" .. Name .. ".json"
+            local ttfPath = Library.Folders.Assets .. "/" .. Name .. ".ttf"
+
+            if isfile and isfile(jsonPath) and getcustomasset then
+                local ok, f = pcall(function() return Font.new(getcustomasset(jsonPath)) end)
+                if ok and f then return f end
             end
 
-            if not isfile(Library.Folders.Assets .. "/" .. Name .. ".ttf") then
-                writefile(Library.Folders.Assets .. "/" .. Name .. ".ttf", game:HttpGet(Data.Url))
+            pcall(function()
+                if isfile and writefile and getcustomasset then
+                    if not isfile(ttfPath) and Data and Data.Url then
+                        local okHttp, content = pcall(game.HttpGet, game, Data.Url)
+                        if okHttp and content then
+                            writefile(ttfPath, content)
+                        end
+                    end
+
+                    if isfile(ttfPath) then
+                        local FontData = {
+                            name = Name,
+                            faces = { {
+                                name = "Regular",
+                                weight = Weight or 400,
+                                style = Style or "Normal",
+                                assetId = getcustomasset(ttfPath)
+                            } }
+                        }
+                        writefile(jsonPath, HttpService:JSONEncode(FontData))
+                    end
+                end
+            end)
+
+            if isfile and isfile(jsonPath) and getcustomasset then
+                local ok, f = pcall(function() return Font.new(getcustomasset(jsonPath)) end)
+                if ok and f then return f end
             end
 
-            local FontData = {
-                name = Name,
-                faces = { {
-                    name = "Regular",
-                    weight = Weight,
-                    style = Style,
-                    assetId = getcustomasset(Library.Folders.Assets .. "/" .. Name .. ".ttf")
-                } }
-            }
-
-            writefile(Library.Folders.Assets .. "/" .. Name .. ".json", HttpService:JSONEncode(FontData))
-            return Font.new(getcustomasset(Library.Folders.Assets .. "/" .. Name .. ".json"))
+            return Font.fromEnum(Enum.Font.Gotham)
         end
 
         function CustomFont:Get(Name)
-            if isfile(Library.Folders.Assets .. "/" .. Name .. ".json") then
-                return Font.new(getcustomasset(Library.Folders.Assets .. "/" .. Name .. ".json"))
+            local jsonPath = Library.Folders.Assets .. "/" .. Name .. ".json"
+            if isfile and isfile(jsonPath) and getcustomasset then
+                local ok, f = pcall(function() return Font.new(getcustomasset(jsonPath)) end)
+                if ok and f then return f end
             end
+            return Font.fromEnum(Enum.Font.Gotham)
         end
 
-        CustomFont:New("Inter", 200, "Regular", {
-            Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/InterSemibold.ttf"
-        })
+        pcall(function()
+            CustomFont:New("Inter", 200, "Regular", {
+                Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/InterSemibold.ttf"
+            })
+        end)
 
             Library.UseCustomCursor = false
     Library.SetCustomCursor = function(self, Bool)
@@ -1990,7 +2090,7 @@ local Library do
         end
     end
 
-    Library.Font = CustomFont:Get("Inter")
+    Library.Font = CustomFont:Get("Inter") or Font.fromEnum(Enum.Font.Gotham)
     end
 
     local Themes = {
@@ -2003,7 +2103,7 @@ local Library do
             ["Dark Gradient"] = FromRGB(211, 211, 211),
             ["Inactive Text"] = FromRGB(185, 185, 185),
             ["Element"] = FromRGB(34, 39, 45),
-            ["Accent"] = FromRGB(170, 130, 255),
+            ["Accent"] = FromRGB(195, 145, 85),
             ["Border"] = FromRGB(32, 36, 42)
         },
 
@@ -2016,7 +2116,7 @@ local Library do
             ["Dark Gradient"] = FromRGB(211, 202, 195),
             ["Inactive Text"] = FromRGB(179, 179, 179),
             ["Element"] = FromRGB(42, 32, 26),
-            ["Accent"] = FromRGB(170, 130, 255),
+            ["Accent"] = FromRGB(195, 145, 85),
             ["Border"] = FromRGB(42, 35, 32)
         },
 
@@ -2047,27 +2147,37 @@ local Library do
         },
     }
 
+    Themes["Bronze"] = TableClone(Themes["Preset"])
+
     Library.Theme = TableClone(Themes["Preset"])
     Library.Themes = Themes
 
-    if not isfile(Library.Folders.Directory .. "/AutoLoadConfig (do not modify this).json") then
-        writefile(Library.Folders.Directory .. "/AutoLoadConfig (do not modify this).json", "")
-    end
+    pcall(function()
+        if isfile and writefile then
+            if not isfile(Library.Folders.Directory .. "/AutoLoadConfig (do not modify this).json") then
+                writefile(Library.Folders.Directory .. "/AutoLoadConfig (do not modify this).json", "")
+            end
 
-    if not isfile(Library.Folders.Directory .. "/AutoLoadTheme (do not modify this).json") then
-        writefile(Library.Folders.Directory .. "/AutoLoadTheme (do not modify this).json", "")
-    end
+            if not isfile(Library.Folders.Directory .. "/AutoLoadTheme (do not modify this).json") then
+                writefile(Library.Folders.Directory .. "/AutoLoadTheme (do not modify this).json", "")
+            end
+        end
+    end)
+
+    local safeLibGuiParent = GetSafeGuiParent()
 
     Library.Holder = Instances:Create("ScreenGui", {
-        Parent = game:GetService("CoreGui"),
+        Parent = safeLibGuiParent,
         Name = "\0",
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
-        DisplayOrder = 2,
+        DisplayOrder = 9999999,
+        IgnoreGuiInset = true,
         ResetOnSpawn = false
     })
+    Library.ScreenGui = Library.Holder.Instance
 
     Library.UnusedHolder = Instances:Create("ScreenGui", {
-        Parent = gethui(),
+        Parent = safeLibGuiParent,
         Name = "\0",
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Enabled = false,
@@ -3624,7 +3734,7 @@ local Library do
                     DropdownItems["OpenIcon"] = Instances:Create("ImageLabel", {
                         Parent = DropdownItems["RealDropdown"].Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(170, 130, 255),
+                        ImageColor3 = FromRGB(195, 145, 85),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 20, 0, 20),
@@ -3724,7 +3834,7 @@ local Library do
                     local CheckImage = Instances:Create("ImageLabel", {
                         Parent = OptionButton.Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(170, 130, 255),
+                        ImageColor3 = FromRGB(195, 145, 85),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 18, 0, 18),
@@ -4279,6 +4389,575 @@ local Library do
             return Colorpicker, Items
         end
 
+        Components.GradientColorpicker = function(Data)
+            Data = Data or {}
+            local def = Data.Default or {}
+            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(195, 145, 85)
+            local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
+            local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
+            local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
+
+            local Gradient = {
+                IsOpen = false,
+                Color1 = c1,
+                Color2 = c2,
+                Alpha1 = a1,
+                Alpha2 = a2,
+                ActiveStop = 1,
+                Name = Data.Name or "Gradient",
+                Type = "GradientColorpicker",
+                Hue1 = 0, Saturation1 = 0, Brightness1 = 1,
+                Hue2 = 0, Saturation2 = 0, Brightness2 = 1,
+            }
+            pcall(function()
+                Gradient.Hue1, Gradient.Saturation1, Gradient.Brightness1 = Color3.toHSV(Gradient.Color1)
+                Gradient.Hue2, Gradient.Saturation2, Gradient.Brightness2 = Color3.toHSV(Gradient.Color2)
+            end)
+
+            setmetatable(Gradient, {
+                __index = function(t, k)
+                    if k == "Value" then return rawget(t, "Color1") end
+                    return rawget(t, k)
+                end
+            })
+
+            local safeFlag = Data.Flag or Library:NextFlag()
+            Library.Flags[safeFlag] = {
+                Color1 = Gradient.Color1,
+                Color2 = Gradient.Color2,
+                Alpha1 = Gradient.Alpha1,
+                Alpha2 = Gradient.Alpha2,
+                Sequence = ColorSequence.new(Gradient.Color1, Gradient.Color2)
+            }
+
+            local Items = {} do
+                Items["ColorpickerButton"] = Instances:Create("TextButton", {
+                    Parent = Data.Parent.Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    Text = "",
+                    AutoButtonColor = false,
+                    AnchorPoint = Vector2New(1, 0.5),
+                    BorderSizePixel = 0,
+                    Position = UDim2New(1, -25, 0.5, 0),
+                    Size = UDim2New(0, 26, 0, 18),
+                    ZIndex = 2,
+                    BackgroundColor3 = FromRGB(32, 36, 42)
+                })
+
+                local Spacing = 4
+                local Col = (Data.Count or 0) % 5
+                local XPos = (26 + Spacing) * Col - Spacing - 26
+                Items["ColorpickerButton"].Instance.Position = UDim2New(1, Data.IsToggle and XPos - 24 or -XPos, 0.5, 0)
+
+                Instances:Create("UICorner", {
+                    Parent = Items["ColorpickerButton"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })
+                local BtnStroke = Instances:Create("UIStroke", {
+                    Parent = Items["ColorpickerButton"].Instance,
+                    Name = "\0",
+                    Color = FromRGB(42, 46, 52),
+                    Thickness = 1,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                })
+                BtnStroke:AddToTheme({Color = "Border"})
+
+                Items["Inline"] = Instances:Create("Frame", {
+                    Parent = Items["ColorpickerButton"].Instance,
+                    Name = "\0",
+                    Size = UDim2New(1, -4, 1, -4),
+                    Position = UDim2New(0, 2, 0, 2),
+                    BorderSizePixel = 0,
+                    ZIndex = 3,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+                Instances:Create("UICorner", {
+                    Parent = Items["Inline"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 3)
+                })
+
+                local ButtonGradient = Instances:Create("UIGradient", {
+                    Parent = Items["Inline"].Instance,
+                    Name = "\0",
+                    Rotation = 0,
+                    Color = ColorSequence.new(Gradient.Color1, Gradient.Color2)
+                })
+
+                -- Picker Popup Window
+                Items["ColorpickerWindow"] = Instances:Create("TextButton", {
+                    Parent = Library.UnusedHolder.Instance,
+                    Text = "",
+                    AutoButtonColor = false,
+                    Name = "\0",
+                    Active = false,
+                    Selectable = false,
+                    Size = UDim2New(0, 226, 0, 310),
+                    Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + 25),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    ZIndex = 100,
+                    Visible = false,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(16, 18, 21)
+                })  Items["ColorpickerWindow"]:AddToTheme({BackgroundColor3 = "Background"})
+
+                Items["ColorpickerWindow"]:MakeDraggable()
+                Items["ColorpickerWindow"]:MakeResizeable(Vector2New(226, 310), Vector2New(9999, 9999))
+
+                Items["CloseButton"] = Instances:Create("ImageButton", {
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Name = "\0",
+                    ScaleType = Enum.ScaleType.Fit,
+                    Size = UDim2New(0, 14, 0, 14),
+                    AutoButtonColor = false,
+                    AnchorPoint = Vector2New(1, 0),
+                    Image = "rbxassetid://76001605964586",
+                    BackgroundTransparency = 1,
+                    Position = UDim2New(1, -6, 0, 6),
+                    ZIndex = 110,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })  Items["CloseButton"]:AddToTheme({ImageColor3 = "Image"})
+
+                Items["CloseButton"]:Connect("MouseButton1Down", function()
+                    Gradient:SetOpen(false)
+                end)
+
+                Instances:Create("UIStroke", {
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Name = "\0",
+                    Color = FromRGB(32, 36, 42),
+                    Transparency = 0.4,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                }):AddToTheme({Color = "Border"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 5)
+                })
+
+                -- Stop selection pills: [ Color 1 | Color 2 ]
+                local PillHolder = Instances:Create("Frame", {
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    Position = UDim2New(0, 8, 0, 8),
+                    Size = UDim2New(1, -36, 0, 22),
+                    BorderSizePixel = 0,
+                    ZIndex = 101
+                })
+
+                Items["Stop1Btn"] = Instances:Create("TextButton", {
+                    Parent = PillHolder.Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    Text = "Color 1",
+                    TextSize = 11,
+                    TextColor3 = FromRGB(255, 255, 255),
+                    AutoButtonColor = false,
+                    Size = UDim2New(0.48, 0, 1, 0),
+                    Position = UDim2New(0, 0, 0, 0),
+                    BackgroundColor3 = FromRGB(34, 39, 45),
+                    ZIndex = 102
+                })  Items["Stop1Btn"]:AddToTheme({BackgroundColor3 = "Element", TextColor3 = "Text"})
+                Instances:Create("UICorner", { Parent = Items["Stop1Btn"].Instance, CornerRadius = UDimNew(0, 4) })
+                local Stop1Stroke = Instances:Create("UIStroke", { Parent = Items["Stop1Btn"].Instance, Color = Library.Theme.Accent, Thickness = 1.2 })
+                Stop1Stroke:AddToTheme({Color = "Accent"})
+
+                Items["Stop2Btn"] = Instances:Create("TextButton", {
+                    Parent = PillHolder.Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    Text = "Color 2",
+                    TextSize = 11,
+                    TextColor3 = FromRGB(185, 185, 185),
+                    AutoButtonColor = false,
+                    Size = UDim2New(0.48, 0, 1, 0),
+                    Position = UDim2New(0.52, 0, 0, 0),
+                    BackgroundColor3 = FromRGB(24, 28, 33),
+                    ZIndex = 102
+                })  Items["Stop2Btn"]:AddToTheme({BackgroundColor3 = "Inline", TextColor3 = "Inactive Text"})
+                Instances:Create("UICorner", { Parent = Items["Stop2Btn"].Instance, CornerRadius = UDimNew(0, 4) })
+                local Stop2Stroke = Instances:Create("UIStroke", { Parent = Items["Stop2Btn"].Instance, Color = FromRGB(35, 40, 48), Thickness = 1 })
+                Stop2Stroke:AddToTheme({Color = "Border"})
+
+                -- Live Gradient Preview bar
+                local PreviewBar = Instances:Create("Frame", {
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Name = "\0",
+                    Position = UDim2New(0, 8, 0, 34),
+                    Size = UDim2New(1, -16, 0, 14),
+                    BorderSizePixel = 0,
+                    ZIndex = 101,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+                Instances:Create("UICorner", { Parent = PreviewBar.Instance, CornerRadius = UDimNew(0, 3) })
+                local PreviewGradient = Instances:Create("UIGradient", {
+                    Parent = PreviewBar.Instance,
+                    Color = ColorSequence.new(Gradient.Color1, Gradient.Color2)
+                })
+
+                -- 2D Saturation / Value Palette
+                Items["Palette"] = Instances:Create("TextButton", {
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Name = "\0",
+                    Text = "",
+                    AutoButtonColor = false,
+                    Position = UDim2New(0, 8, 0, 54),
+                    Size = UDim2New(1, -16, 1, -145),
+                    ZIndex = 102,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = Gradient.Color1
+                })
+                Instances:Create("UICorner", { Parent = Items["Palette"].Instance, CornerRadius = UDimNew(0, 5) })
+
+                Items["Saturation"] = Instances:Create("ImageLabel", {
+                    Parent = Items["Palette"].Instance,
+                    Name = "\0",
+                    Image = Library:GetImage("Saturation"),
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, 0, 1, 0),
+                    ZIndex = 102
+                })
+                Instances:Create("UICorner", { Parent = Items["Saturation"].Instance, CornerRadius = UDimNew(0, 5) })
+
+                Items["Value"] = Instances:Create("ImageLabel", {
+                    Parent = Items["Palette"].Instance,
+                    Name = "\0",
+                    Image = Library:GetImage("Value"),
+                    BackgroundTransparency = 1,
+                    Position = UDim2New(0, -1, 0, 0),
+                    Size = UDim2New(1, 2, 1, 0),
+                    ZIndex = 103
+                })
+                Instances:Create("UICorner", { Parent = Items["Value"].Instance, CornerRadius = UDimNew(0, 5) })
+
+                Items["PaletteDragger"] = Instances:Create("Frame", {
+                    Parent = Items["Palette"].Instance,
+                    Name = "\0",
+                    Size = UDim2New(0, 4, 0, 4),
+                    Position = UDim2New(0, 5, 0, 5),
+                    ZIndex = 104,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+                Instances:Create("UICorner", { Parent = Items["PaletteDragger"].Instance, CornerRadius = UDimNew(1, 0) })
+                Instances:Create("UIStroke", { Parent = Items["PaletteDragger"].Instance, Thickness = 1.2 })
+
+                -- Hue Slider
+                Items["Hue"] = Instances:Create("TextButton", {
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Name = "\0",
+                    Text = "",
+                    AutoButtonColor = false,
+                    AnchorPoint = Vector2New(0, 1),
+                    Position = UDim2New(0, 8, 1, -55),
+                    Size = UDim2New(1, -16, 0, 16),
+                    ZIndex = 102,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+                Instances:Create("UICorner", { Parent = Items["Hue"].Instance, CornerRadius = UDimNew(0, 4) })
+                Instances:Create("UIGradient", {
+                    Parent = Items["Hue"].Instance,
+                    Color = RGBSequence{
+                        RGBSequenceKeypoint(0, FromRGB(255, 0, 0)),
+                        RGBSequenceKeypoint(0.17, FromRGB(255, 255, 0)),
+                        RGBSequenceKeypoint(0.33, FromRGB(0, 255, 0)),
+                        RGBSequenceKeypoint(0.5, FromRGB(0, 255, 255)),
+                        RGBSequenceKeypoint(0.67, FromRGB(0, 0, 255)),
+                        RGBSequenceKeypoint(0.83, FromRGB(255, 0, 255)),
+                        RGBSequenceKeypoint(1, FromRGB(255, 0, 0))
+                    }
+                })
+                Items["HueDragger"] = Instances:Create("Frame", {
+                    Parent = Items["Hue"].Instance,
+                    Name = "\0",
+                    AnchorPoint = Vector2New(0, 0.5),
+                    Position = UDim2New(0, 2, 0.5, 0),
+                    Size = UDim2New(0, 3, 1, -4),
+                    ZIndex = 103,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+                Instances:Create("UICorner", { Parent = Items["HueDragger"].Instance, CornerRadius = UDimNew(1, 0) })
+                Instances:Create("UIStroke", { Parent = Items["HueDragger"].Instance, Thickness = 1 })
+
+                -- Alpha Slider
+                Items["Alpha"] = Instances:Create("TextButton", {
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Name = "\0",
+                    Text = "",
+                    AutoButtonColor = false,
+                    AnchorPoint = Vector2New(0, 1),
+                    Position = UDim2New(0, 8, 1, -33),
+                    Size = UDim2New(1, -16, 0, 16),
+                    ZIndex = 102,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = Gradient.Color1
+                })
+                Instances:Create("UICorner", { Parent = Items["Alpha"].Instance, CornerRadius = UDimNew(0, 4) })
+                Items["AlphaDragger"] = Instances:Create("Frame", {
+                    Parent = Items["Alpha"].Instance,
+                    Name = "\0",
+                    AnchorPoint = Vector2New(0, 0.5),
+                    Position = UDim2New(0, 2, 0.5, 0),
+                    Size = UDim2New(0, 3, 1, -4),
+                    ZIndex = 103,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+                Instances:Create("UICorner", { Parent = Items["AlphaDragger"].Instance, CornerRadius = UDimNew(1, 0) })
+                Instances:Create("UIStroke", { Parent = Items["AlphaDragger"].Instance, Thickness = 1 })
+
+                -- Hex Input Textbox
+                local HexBox = Instances:Create("TextBox", {
+                    Parent = Items["ColorpickerWindow"].Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    AnchorPoint = Vector2New(0, 1),
+                    Position = UDim2New(0, 8, 1, -8),
+                    Size = UDim2New(1, -16, 0, 20),
+                    Text = "#" .. Gradient.Color1:ToHex(),
+                    TextColor3 = FromRGB(255, 255, 255),
+                    TextSize = 11,
+                    ClearTextOnFocus = false,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(34, 39, 45),
+                    ZIndex = 102
+                })  HexBox:AddToTheme({BackgroundColor3 = "Element", TextColor3 = "Text"})
+                Instances:Create("UICorner", { Parent = HexBox.Instance, CornerRadius = UDimNew(0, 4) })
+
+                local function RefreshActivePill()
+                    if Gradient.ActiveStop == 1 then
+                        Items["Stop1Btn"]:Tween(nil, {BackgroundColor3 = Library.Theme.Element})
+                        Stop1Stroke.Instance.Color = Library.Theme.Accent
+                        Items["Stop2Btn"]:Tween(nil, {BackgroundColor3 = Library.Theme.Inline})
+                        Stop2Stroke.Instance.Color = Library.Theme.Border
+                        Items["Stop1Btn"].Instance.TextColor3 = Library.Theme.Text
+                        Items["Stop2Btn"].Instance.TextColor3 = Library.Theme["Inactive Text"]
+                    else
+                        Items["Stop2Btn"]:Tween(nil, {BackgroundColor3 = Library.Theme.Element})
+                        Stop2Stroke.Instance.Color = Library.Theme.Accent
+                        Items["Stop1Btn"]:Tween(nil, {BackgroundColor3 = Library.Theme.Inline})
+                        Stop1Stroke.Instance.Color = Library.Theme.Border
+                        Items["Stop2Btn"].Instance.TextColor3 = Library.Theme.Text
+                        Items["Stop1Btn"].Instance.TextColor3 = Library.Theme["Inactive Text"]
+                    end
+                end
+
+                local function SyncControls()
+                    local curHue = (Gradient.ActiveStop == 1) and Gradient.Hue1 or Gradient.Hue2
+                    local curSat = (Gradient.ActiveStop == 1) and Gradient.Saturation1 or Gradient.Saturation2
+                    local curVal = (Gradient.ActiveStop == 1) and Gradient.Brightness1 or Gradient.Brightness2
+                    local curAlpha = (Gradient.ActiveStop == 1) and Gradient.Alpha1 or Gradient.Alpha2
+                    local curCol = (Gradient.ActiveStop == 1) and Gradient.Color1 or Gradient.Color2
+
+                    Items["Palette"].Instance.BackgroundColor3 = FromHSV(curHue, 1, 1)
+                    Items["PaletteDragger"]:Tween(nil, {Position = UDim2New(curSat, -2, 1 - curVal, -2)})
+                    Items["HueDragger"]:Tween(nil, {Position = UDim2New(curHue, -1, 0.5, 0)})
+                    Items["Alpha"]:Tween(nil, {BackgroundColor3 = curCol})
+                    Items["AlphaDragger"]:Tween(nil, {Position = UDim2New(curAlpha, -1, 0.5, 0)})
+                    HexBox.Instance.Text = "#" .. curCol:ToHex()
+
+                    PreviewGradient.Instance.Color = ColorSequence.new(Gradient.Color1, Gradient.Color2)
+                    ButtonGradient.Instance.Color = ColorSequence.new(Gradient.Color1, Gradient.Color2)
+                    RefreshActivePill()
+                end
+
+                Items["Stop1Btn"]:Connect("MouseButton1Down", function()
+                    Gradient.ActiveStop = 1
+                    SyncControls()
+                end)
+                Items["Stop2Btn"]:Connect("MouseButton1Down", function()
+                    Gradient.ActiveStop = 2
+                    SyncControls()
+                end)
+
+                function Gradient:Update(IsFromAlpha)
+                    local curHue = (Gradient.ActiveStop == 1) and Gradient.Hue1 or Gradient.Hue2
+                    local curSat = (Gradient.ActiveStop == 1) and Gradient.Saturation1 or Gradient.Saturation2
+                    local curVal = (Gradient.ActiveStop == 1) and Gradient.Brightness1 or Gradient.Brightness2
+                    local curCol = FromHSV(curHue, curSat, curVal)
+
+                    if Gradient.ActiveStop == 1 then
+                        Gradient.Color1 = curCol
+                    else
+                        Gradient.Color2 = curCol
+                    end
+
+                    SyncControls()
+
+                    local seq = ColorSequence.new(Gradient.Color1, Gradient.Color2)
+                    Library.Flags[safeFlag] = {
+                        Color1 = Gradient.Color1,
+                        Color2 = Gradient.Color2,
+                        Alpha1 = Gradient.Alpha1,
+                        Alpha2 = Gradient.Alpha2,
+                        Sequence = seq
+                    }
+                    if Data.Callback then
+                        Library:SafeCall(Data.Callback, Gradient.Color1, Gradient.Color2, Gradient.Alpha1, Gradient.Alpha2, seq)
+                    end
+                end
+
+                function Gradient:Set(c1, c2, a1, a2)
+                    if type(c1) == "table" then
+                        c2 = c1.Color2 or c1[2]
+                        a1 = c1.Alpha1
+                        a2 = c1.Alpha2
+                        c1 = c1.Color1 or c1[1]
+                    end
+                    if c1 then
+                        Gradient.Color1 = c1
+                        Gradient.Hue1, Gradient.Saturation1, Gradient.Brightness1 = Color3.toHSV(c1)
+                    end
+                    if c2 then
+                        Gradient.Color2 = c2
+                        Gradient.Hue2, Gradient.Saturation2, Gradient.Brightness2 = Color3.toHSV(c2)
+                    end
+                    if a1 then Gradient.Alpha1 = tonumber(a1) or Gradient.Alpha1 end
+                    if a2 then Gradient.Alpha2 = tonumber(a2) or Gradient.Alpha2 end
+                    Gradient:Update()
+                end
+
+                function Gradient:Get()
+                    local seq = ColorSequence.new(Gradient.Color1, Gradient.Color2)
+                    return Gradient.Color1, Gradient.Color2, Gradient.Alpha1, Gradient.Alpha2, seq
+                end
+
+                local SlidingPalette, SlidingHue, SlidingAlpha = false, false, false
+
+                local function UpdatePaletteInput(input)
+                    local pal = Items["Palette"].Instance
+                    local x = math.clamp((input.Position.X - pal.AbsolutePosition.X) / pal.AbsoluteSize.X, 0, 1)
+                    local y = math.clamp((input.Position.Y - pal.AbsolutePosition.Y) / pal.AbsoluteSize.Y, 0, 1)
+                    if Gradient.ActiveStop == 1 then
+                        Gradient.Saturation1 = x
+                        Gradient.Brightness1 = 1 - y
+                    else
+                        Gradient.Saturation2 = x
+                        Gradient.Brightness2 = 1 - y
+                    end
+                    Gradient:Update()
+                end
+
+                Items["Palette"]:Connect("InputBegan", function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        SlidingPalette = true
+                        UpdatePaletteInput(input)
+                    end
+                end)
+
+                local function UpdateHueInput(input)
+                    local hueFrame = Items["Hue"].Instance
+                    local x = math.clamp((input.Position.X - hueFrame.AbsolutePosition.X) / hueFrame.AbsoluteSize.X, 0, 1)
+                    if Gradient.ActiveStop == 1 then
+                        Gradient.Hue1 = x
+                    else
+                        Gradient.Hue2 = x
+                    end
+                    Gradient:Update()
+                end
+
+                Items["Hue"]:Connect("InputBegan", function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        SlidingHue = true
+                        UpdateHueInput(input)
+                    end
+                end)
+
+                local function UpdateAlphaInput(input)
+                    local alphaFrame = Items["Alpha"].Instance
+                    local x = math.clamp((input.Position.X - alphaFrame.AbsolutePosition.X) / alphaFrame.AbsoluteSize.X, 0, 1)
+                    if Gradient.ActiveStop == 1 then
+                        Gradient.Alpha1 = x
+                    else
+                        Gradient.Alpha2 = x
+                    end
+                    Gradient:Update(true)
+                end
+
+                Items["Alpha"]:Connect("InputBegan", function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        SlidingAlpha = true
+                        UpdateAlphaInput(input)
+                    end
+                end)
+
+                Library:Connect(UserInputService.InputChanged, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                        if SlidingPalette then UpdatePaletteInput(input)
+                        elseif SlidingHue then UpdateHueInput(input)
+                        elseif SlidingAlpha then UpdateAlphaInput(input)
+                        end
+                    end
+                end)
+
+                Library:Connect(UserInputService.InputEnded, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        SlidingPalette = false
+                        SlidingHue = false
+                        SlidingAlpha = false
+                    end
+                end)
+
+                HexBox:Connect("FocusLost", function()
+                    local clean = HexBox.Instance.Text:gsub("#", "")
+                    local ok, col = pcall(Color3.fromHex, clean)
+                    if ok and col then
+                        if Gradient.ActiveStop == 1 then
+                            Gradient.Color1 = col
+                            Gradient.Hue1, Gradient.Saturation1, Gradient.Brightness1 = Color3.toHSV(col)
+                        else
+                            Gradient.Color2 = col
+                            Gradient.Hue2, Gradient.Saturation2, Gradient.Brightness2 = Color3.toHSV(col)
+                        end
+                        Gradient:Update()
+                    else
+                        local curCol = (Gradient.ActiveStop == 1) and Gradient.Color1 or Gradient.Color2
+                        HexBox.Instance.Text = "#" .. curCol:ToHex()
+                    end
+                end)
+
+                function Gradient:SetOpen(Bool)
+                    Gradient.IsOpen = Bool
+                    if Bool then
+                        Items["ColorpickerWindow"].Instance.Parent = Library.Holder.Instance
+                        local btnPos = Items["ColorpickerButton"].Instance.AbsolutePosition
+                        local cam = GetCamera()
+                        local vp = (cam and cam.ViewportSize.X > 200) and cam.ViewportSize or Vector2New(1280, 720)
+                        local targetX = math.clamp(btnPos.X - 230, 20, vp.X - 240)
+                        local targetY = math.clamp(btnPos.Y, 20, vp.Y - 320)
+                        Items["ColorpickerWindow"].Instance.Position = UDim2New(0, targetX, 0, targetY)
+                        Items["ColorpickerWindow"].Instance.Visible = true
+                        SyncControls()
+                        Library.OpenFrames[safeFlag] = Gradient
+                    else
+                        Items["ColorpickerWindow"].Instance.Visible = false
+                        Items["ColorpickerWindow"].Instance.Parent = Library.UnusedHolder.Instance
+                        Library.OpenFrames[safeFlag] = nil
+                    end
+                end
+
+                Items["ColorpickerButton"]:Connect("MouseButton1Down", function()
+                    Gradient:SetOpen(not Gradient.IsOpen)
+                end)
+
+                getgenv().Options[safeFlag] = Gradient
+                Library.SetFlags[safeFlag] = function(val1, val2, a1, a2)
+                    Gradient:Set(val1, val2, a1, a2)
+                end
+
+                SyncControls()
+            end
+
+            return Gradient, Items
+        end
+
         Components.Keybind = function(Data)
             local Keybind = {
                 Type = "Keybind",
@@ -4439,7 +5118,7 @@ local Library do
                     DropdownItems["OpenIcon"] = Instances:Create("ImageLabel", {
                         Parent = DropdownItems["RealDropdown"].Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(170, 130, 255),
+                        ImageColor3 = FromRGB(195, 145, 85),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 20, 0, 20),
@@ -5950,7 +6629,7 @@ local Library do
                 ESPPreview:SetVisibility(false)
             end)
 
-            local LocalCharacter = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+            local LocalCharacter = LocalPlayer and LocalPlayer.Character
 
             local ViewportCamera = InstanceNew("Camera")
             Items["CharacterViewport"].Instance.CurrentCamera = ViewportCamera
@@ -5959,38 +6638,55 @@ local Library do
             ViewportCamera.CFrame = CFrameNew(0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1)
 
             Library:Connect(RunService.RenderStepped, function()
-                local Pos, Size = Math:GetBoundingBox(ESPPreview.Player, ViewportCamera, Items.CharacterViewport.Instance)
-                Items.Box.Instance.Position = Pos
-                Items.Box.Instance.Size = Size
+                if ESPPreview.Player and (ESPPreview.Player.PrimaryPart or ESPPreview.Player:FindFirstChild("HumanoidRootPart")) then
+                    local Pos, Size = Math:GetBoundingBox(ESPPreview.Player, ViewportCamera, Items.CharacterViewport.Instance)
+                    Items.Box.Instance.Position = Pos
+                    Items.Box.Instance.Size = Size
+                end
             end)
 
             local ViewportModel
 
-            if LocalCharacter then
-                LocalCharacter.Archivable = true
-                ViewportModel = LocalCharacter:Clone()
+            local function LoadPreviewModel(char)
+                if not char then return end
+                pcall(function()
+                    char.Archivable = true
+                    if ViewportModel then ViewportModel:Destroy() end
+                    ViewportModel = char:Clone()
 
-                ViewportModel.PrimaryPart.Anchored = true
-                ViewportModel.Parent = Items["CharacterViewport"].Instance
-
-                for Index, Value in ViewportModel:GetDescendants() do
-                    if Value:IsA("LocalScript") then
-                        Value:Destroy()
-                    end
-                end
-
-                local HumanoidRootPart = ViewportModel:FindFirstChild("HumanoidRootPart")
-
-                if HumanoidRootPart then
-                    if not ViewportModel.PrimaryPart then
+                    local HumanoidRootPart = ViewportModel:FindFirstChild("HumanoidRootPart") or ViewportModel:FindFirstChild("Torso") or ViewportModel:FindFirstChild("UpperTorso")
+                    if HumanoidRootPart and not ViewportModel.PrimaryPart then
                         ViewportModel.PrimaryPart = HumanoidRootPart
                     end
 
-                    ViewportModel:SetPrimaryPartCFrame(CFrameAngles(0, MathRad(180), 0) + Vector3New(0, 1.5, 0))
-                    ViewportCamera.CFrame = CFrameNew(Vector3New(0, 2, 6), Vector3New(0, 1, 0))
-                end
+                    if ViewportModel.PrimaryPart then
+                        ViewportModel.PrimaryPart.Anchored = true
+                        ViewportModel:SetPrimaryPartCFrame(CFrameAngles(0, MathRad(180), 0) + Vector3New(0, 1.5, 0))
+                    end
 
-                ESPPreview.Player = ViewportModel
+                    ViewportModel.Parent = Items["CharacterViewport"].Instance
+
+                    for Index, Value in ViewportModel:GetDescendants() do
+                        if Value:IsA("LocalScript") or Value:IsA("Script") then
+                            Value:Destroy()
+                        end
+                    end
+
+                    ViewportCamera.CFrame = CFrameNew(Vector3New(0, 2, 6), Vector3New(0, 1, 0))
+                    ESPPreview.Player = ViewportModel
+                    ViewportCamera.CameraSubject = ViewportModel
+                end)
+            end
+
+            if LocalCharacter then
+                LoadPreviewModel(LocalCharacter)
+            end
+
+            if LocalPlayer then
+                LocalPlayer.CharacterAdded:Connect(function(newChar)
+                    task.wait(0.5)
+                    LoadPreviewModel(newChar)
+                end)
             end
 
             ViewportCamera.CameraSubject = ViewportModel
@@ -6140,7 +6836,7 @@ local Library do
                 Items["Logo"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(170, 130, 255),
+                    ImageColor3 = FromRGB(195, 145, 85),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = UDim2New(0, 20, 0, 20),
@@ -6328,7 +7024,7 @@ local Library do
                 Items["SendImageLabel"] = Instances:Create("ImageLabel", {
                     Parent = Items["SendMessageButton"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(170, 130, 255),
+                    ImageColor3 = FromRGB(195, 145, 85),
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(0.5, 0.5),
                     Image = "rbxassetid://93681479181206",
@@ -6345,7 +7041,7 @@ local Library do
                     AutomaticCanvasSize = Enum.AutomaticSize.Y,
                     BorderSizePixel = 0,
                     CanvasSize = UDim2New(0, 0, 0, 0),
-                    ScrollBarImageColor3 = FromRGB(170, 130, 255),
+                    ScrollBarImageColor3 = FromRGB(195, 145, 85),
                     MidImage = "rbxassetid://76010408336709",
                     BorderColor3 = FromRGB(0, 0, 0),
                     ScrollBarThickness = 2,
@@ -6788,7 +7484,7 @@ local Library do
 
             local Items = { } do
                 Items["Watermark"] = Instances:Create("Frame", {
-                    Parent = Library.ScreenGui,
+                    Parent = (Library.Holder and Library.Holder.Instance) or Library.ScreenGui or GetSafeGuiParent(),
                     Name = "\0",
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(0.5, 0),
@@ -6821,7 +7517,7 @@ local Library do
                 Items["Logo"] = Instances:Create("ImageLabel", {
                     Parent = Items["Watermark"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(170, 130, 255),
+                    ImageColor3 = FromRGB(195, 145, 85),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = _hasLogo and UDim2New(0, 22, 0, 22) or UDim2New(0, 0, 0, 0),
@@ -6910,7 +7606,7 @@ local Library do
                 Items["Icon"] = Instances:Create("ImageLabel", {
                     Parent = Items["KeybindsList"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(170, 130, 255),
+                    ImageColor3 = FromRGB(195, 145, 85),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Image = "rbxassetid://89224403789635",
@@ -7064,12 +7760,17 @@ local Library do
             }
 
             local Items = { } do
+                local currentCam = GetCamera()
+                local vpSize = (currentCam and currentCam.ViewportSize.X > 200) and currentCam.ViewportSize or Vector2New(1280, 720)
+                local initX = math.clamp(math.floor(vpSize.X / 3.5), 20, math.max(20, vpSize.X - Window.Size.X.Offset - 20))
+                local initY = math.clamp(math.floor(vpSize.Y / 3.5), 20, math.max(20, vpSize.Y - Window.Size.Y.Offset - 20))
+
                 Items["MainFrame"] = Instances:Create("Frame", {
                     Parent = Library.Holder.Instance,
                     Name = "\0",
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(0, 0),
-                    Position = UDim2New(0, Camera.ViewportSize.X / 3.5, 0, Camera.ViewportSize.Y / 3.5),
+                    Position = UDim2New(0, initX, 0, initY),
                     Size = Window.Size,
                     ZIndex = 2,
                     BorderSizePixel = 0,
@@ -7204,7 +7905,7 @@ local Library do
                 Items["Logo"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(170, 130, 255),
+                    ImageColor3 = FromRGB(195, 145, 85),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = _hasLogo and UDim2New(0, 22, 0, 22) or UDim2New(0, 0, 0, 0),
@@ -7611,6 +8312,12 @@ local Library do
 
             function Window:SetText(Text)
                 Items["Title"].Instance.Text = Text
+            end
+
+            function Window:ESPPreview(Data)
+                Data = Data or {}
+                Data.MainFrame = Items["MainFrame"]
+                return Library:ESPPreview(Data)
             end
 
             Library:Connect(UserInputService.InputBegan, function(Input, GameProcessedEvent)
@@ -8485,7 +9192,7 @@ local Library do
                     DropdownItems["OpenIcon"] = Instances:Create("ImageLabel", {
                         Parent = DropdownItems["RealDropdown"].Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(170, 130, 255),
+                        ImageColor3 = FromRGB(195, 145, 85),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 20, 0, 20),
@@ -8592,7 +9299,7 @@ local Library do
                     local CheckImage = Instances:Create("ImageLabel", {
                         Parent = OptionButton.Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(170, 130, 255),
+                        ImageColor3 = FromRGB(195, 145, 85),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 18, 0, 18),
@@ -9140,7 +9847,7 @@ local Library do
                 Items["Icon"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(170, 130, 255),
+                    ImageColor3 = FromRGB(195, 145, 85),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = UDim2New(0, 18, 0, 18),
@@ -9286,6 +9993,11 @@ Library.Sections.Toggle = function(self, Data)
             Toggle.SetVisible = Toggle.SetVisibility
 
             function Toggle:Colorpicker(Data)
+                Data = Data or {}
+                if Data.Mode == "Gradient" or Data.Gradient then
+                    return self:GradientColorpicker(Data)
+                end
+
                 local Colorpicker = {
                     Window = self.Window,
                     Page = self.Page,
@@ -9317,6 +10029,51 @@ Library.Sections.Toggle = function(self, Data)
                 })
 
                 return NewColorpicker
+            end
+
+            function Toggle:GradientColorpicker(Data)
+                Data = Data or {}
+                local def = Data.Default or {}
+                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(195, 145, 85)
+                local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
+                local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
+                local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
+
+                local Gradient = {
+                    Window = self.Window,
+                    Page = self.Page,
+                    Section = self,
+
+                    Name = Data.Name or Data.name or "Gradient Color",
+                    Color1 = c1,
+                    Color2 = c2,
+                    Alpha1 = a1,
+                    Alpha2 = a2,
+                    Flag = Data.Flag or Data.flag or Library:NextFlag(),
+                    Callback = Data.Callback or Data.callback or function() end,
+
+                    Count = Toggle.Count
+                }
+
+                Toggle.Count += 1
+                Gradient.Count = Toggle.Count
+
+                local NewGradient, GradItems = Components.GradientColorpicker({
+                    Window = Gradient.Window,
+                    Page = Gradient.Page,
+                    Parent = ToggleItems["SubElements"],
+                    Name = Gradient.Name,
+                    Flag = Gradient.Flag,
+                    IsToggle = true,
+                    Color1 = Gradient.Color1,
+                    Color2 = Gradient.Color2,
+                    Alpha1 = Gradient.Alpha1,
+                    Alpha2 = Gradient.Alpha2,
+                    Callback = Gradient.Callback,
+                    Count = Gradient.Count
+                })
+
+                return NewGradient
             end
 
             function Toggle:Keybind(Data)
@@ -9466,6 +10223,11 @@ Library.Sections.Toggle = function(self, Data)
         end
 
         Library.Sections.Slider = function(self, Data)
+            Data = Data or {}
+            if Data.Range or Data.MinMax or Data.RangeSlider then
+                return self:RangeSlider(Data)
+            end
+
             local Slider = {
                 Window = self.Window,
                 Page = self.Page,
@@ -9560,7 +10322,7 @@ Library.Sections.Toggle = function(self, Data)
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(170, 130, 255)
+                    BackgroundColor3 = FromRGB(195, 145, 85)
                 })  Items["Accent"]:AddToTheme({BackgroundColor3 = "Accent"})
 
                 Instances:Create("UICorner", {
@@ -9698,6 +10460,287 @@ Library.Sections.Toggle = function(self, Data)
 
             return Slider
         end
+
+        Library.Sections.RangeSlider = function(self, Data)
+            Data = Data or {}
+            local def = Data.Default or {}
+            local minBound = tonumber(Data.Min or Data.min) or 0
+            local maxBound = tonumber(Data.Max or Data.max) or 100
+            local defaultLow = tonumber(def.Min or def[1] or Data.Low or Data.MinVal) or minBound
+            local defaultHigh = tonumber(def.Max or def[2] or Data.High or Data.MaxVal) or maxBound
+
+            local RangeSlider = {
+                Window = self.Window,
+                Page = self.Page,
+                Section = self,
+                Name = Data.Name or Data.name or "Range Slider",
+                Min = minBound,
+                Max = maxBound,
+                Flag = Data.Flag or Data.flag or Library:NextFlag(),
+                Suffix = Data.Suffix or Data.suffix or "",
+                Step = Data.Step or Data.step or Data.Increment or Data.increment or Data.Rounding or Data.rounding or Data.Decimals or Data.decimals or 1,
+                Decimals = Data.Decimals or Data.decimals or 0,
+                Tooltip = Data.Tooltip or Data.tooltip or nil,
+                Callback = Data.Callback or Data.callback or function() end,
+                Type = "RangeSlider",
+                Sliding = false,
+                ActiveDrag = nil,
+                Value = {
+                    Min = math.clamp(defaultLow, minBound, maxBound),
+                    Max = math.clamp(defaultHigh, minBound, maxBound)
+                }
+            }
+            if RangeSlider.Value.Min > RangeSlider.Value.Max then
+                RangeSlider.Value.Min, RangeSlider.Value.Max = RangeSlider.Value.Max, RangeSlider.Value.Min
+            end
+
+            local Items = {} do
+                Items["Slider"] = Instances:Create("Frame", {
+                    Parent = RangeSlider.Section.Items["Content"].Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, 0, 0, 38),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    ZIndex = 2,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+
+                Items["Slider"]:Tooltip(RangeSlider.Tooltip)
+
+                Items["Text"] = Instances:Create("TextLabel", {
+                    Parent = Items["Slider"].Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    TextColor3 = FromRGB(255, 255, 255),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    Text = RangeSlider.Name,
+                    AutomaticSize = Enum.AutomaticSize.X,
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(0, 0, 0, 15),
+                    BorderSizePixel = 0,
+                    ZIndex = 2,
+                    TextSize = 14,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
+
+                Items["RealSlider"] = Instances:Create("TextButton", {
+                    Parent = Items["Slider"].Instance,
+                    AutoButtonColor = false,
+                    Text = "",
+                    Name = "\0",
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    AnchorPoint = Vector2New(0, 1),
+                    Position = UDim2New(0, 0, 1, 0),
+                    Size = UDim2New(1, 0, 0, 15),
+                    ZIndex = 2,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(34, 39, 45)
+                })  Items["RealSlider"]:AddToTheme({BackgroundColor3 = "Element"})
+
+                Items["RealSlider"]:OnHover(function()
+                    Items["RealSlider"]:Tween(nil, {BackgroundColor3 = Library:GetLighterColor(Library.Theme.Element, 1.45)})
+                end)
+
+                Items["RealSlider"]:OnHoverLeave(function()
+                    Items["RealSlider"]:Tween(nil, {BackgroundColor3 = Library.Theme.Element})
+                end)
+
+                Instances:Create("UICorner", {
+                    Parent = Items["RealSlider"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })
+
+                Instances:Create("UIGradient", {
+                    Parent = Items["RealSlider"].Instance,
+                    Name = "\0",
+                    Rotation = 84,
+                    Color = RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, FromRGB(211, 211, 211))}
+                }):AddToTheme({Color = function()
+                    return RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, Library.Theme["Dark Gradient"])}
+                end})
+
+                Items["Accent"] = Instances:Create("Frame", {
+                    Parent = Items["RealSlider"].Instance,
+                    Name = "\0",
+                    Position = UDim2New(0, 0, 0, 0),
+                    Size = UDim2New(1, 0, 1, 0),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    ZIndex = 2,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(195, 145, 85)
+                })  Items["Accent"]:AddToTheme({BackgroundColor3 = "Accent"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["Accent"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })
+
+                Instances:Create("UIGradient", {
+                    Parent = Items["Accent"].Instance,
+                    Name = "\0",
+                    Rotation = 84,
+                    Color = RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, FromRGB(211, 211, 211))}
+                }):AddToTheme({Color = function()
+                    return RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, Library.Theme["Dark Gradient"])}
+                end})
+
+                Items["Value"] = Instances:Create("TextLabel", {
+                    Parent = Items["Slider"].Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    TextColor3 = FromRGB(255, 255, 255),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    Text = "",
+                    AutomaticSize = Enum.AutomaticSize.X,
+                    AnchorPoint = Vector2New(1, 0),
+                    Size = UDim2New(0, 0, 0, 15),
+                    BackgroundTransparency = 1,
+                    Position = UDim2New(1, 0, 0, 0),
+                    BorderSizePixel = 0,
+                    ZIndex = 2,
+                    TextSize = 14,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })  Items["Value"]:AddToTheme({TextColor3 = "Text"})
+            end
+
+            local function RoundVal(val)
+                local step = RangeSlider.Step
+                if type(step) == "number" and step > 0 then
+                    local v = math.floor((val / step) + 0.5) * step
+                    if math.floor(step) ~= step then
+                        local decStr = tostring(step):split(".")[2]
+                        local decCount = decStr and #decStr or 1
+                        return tonumber(string.format("%." .. decCount .. "f", v)) or v
+                    else
+                        return math.floor(v)
+                    end
+                else
+                    return Library:Round(val, RangeSlider.Decimals or 0)
+                end
+            end
+
+            function RangeSlider:Get()
+                return RangeSlider.Value, RangeSlider.Value.Min, RangeSlider.Value.Max
+            end
+
+            function RangeSlider:Set(v1, v2)
+                local low, high
+                if type(v1) == "table" then
+                    low = v1.Min or v1[1] or RangeSlider.Min
+                    high = v1.Max or v1[2] or RangeSlider.Max
+                else
+                    low = v1 or RangeSlider.Value.Min
+                    high = v2 or RangeSlider.Value.Max
+                end
+                low = math.clamp(RoundVal(tonumber(low) or RangeSlider.Min), RangeSlider.Min, RangeSlider.Max)
+                high = math.clamp(RoundVal(tonumber(high) or RangeSlider.Max), RangeSlider.Min, RangeSlider.Max)
+                if low > high then low, high = high, low end
+
+                RangeSlider.Value.Min = low
+                RangeSlider.Value.Max = high
+
+                local range = math.max(RangeSlider.Max - RangeSlider.Min, 0.0001)
+                local lowRatio = math.clamp((low - RangeSlider.Min) / range, 0, 1)
+                local highRatio = math.clamp((high - RangeSlider.Min) / range, 0, 1)
+                local widthRatio = math.max(highRatio - lowRatio, 0.02)
+
+                Items["Accent"]:Tween(TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                    Position = UDim2New(lowRatio, 0, 0, 0),
+                    Size = UDim2New(widthRatio, 0, 1, 0)
+                })
+
+                Items["Value"].Instance.Text = tostring(low) .. " - " .. tostring(high) .. tostring(RangeSlider.Suffix or "")
+
+                if RangeSlider.Flag then
+                    Library.Flags[RangeSlider.Flag] = RangeSlider.Value
+                end
+
+                if RangeSlider.Callback then
+                    Library:SafeCall(RangeSlider.Callback, RangeSlider.Value, low, high)
+                end
+            end
+
+            function RangeSlider:SetVisibility(Bool)
+                Items["Slider"].Instance.Visible = Bool
+            end
+
+            if RangeSlider.Flag then
+                getgenv().Options[RangeSlider.Flag] = RangeSlider
+            end
+
+            local SearchData = {
+                Name = RangeSlider.Name,
+                Item = Items["Slider"]
+            }
+            local PageSearchData = Library.SearchItems[RangeSlider.Page]
+            if PageSearchData then
+                TableInsert(PageSearchData, SearchData)
+            end
+
+            local InputChanged
+            local function UpdateDrag(inputX)
+                local realSlider = Items["RealSlider"].Instance
+                local absX = math.max(realSlider.AbsoluteSize.X, 1)
+                local ratio = math.clamp((inputX - realSlider.AbsolutePosition.X) / absX, 0, 1)
+                local rawVal = ((RangeSlider.Max - RangeSlider.Min) * ratio) + RangeSlider.Min
+                local stepped = RoundVal(rawVal)
+
+                if RangeSlider.ActiveDrag == "Low" then
+                    local newLow = math.clamp(stepped, RangeSlider.Min, RangeSlider.Value.Max)
+                    RangeSlider:Set(newLow, RangeSlider.Value.Max)
+                elseif RangeSlider.ActiveDrag == "High" then
+                    local newHigh = math.clamp(stepped, RangeSlider.Value.Min, RangeSlider.Max)
+                    RangeSlider:Set(RangeSlider.Value.Min, newHigh)
+                end
+            end
+
+            Items["RealSlider"]:Connect("InputBegan", function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                    RangeSlider.Sliding = true
+                    local realSlider = Items["RealSlider"].Instance
+                    local absX = math.max(realSlider.AbsoluteSize.X, 1)
+                    local ratio = math.clamp((Input.Position.X - realSlider.AbsolutePosition.X) / absX, 0, 1)
+                    local clickVal = ((RangeSlider.Max - RangeSlider.Min) * ratio) + RangeSlider.Min
+
+                    local distLow = math.abs(clickVal - RangeSlider.Value.Min)
+                    local distHigh = math.abs(clickVal - RangeSlider.Value.Max)
+                    if distLow <= distHigh then
+                        RangeSlider.ActiveDrag = "Low"
+                    else
+                        RangeSlider.ActiveDrag = "High"
+                    end
+                    UpdateDrag(Input.Position.X)
+
+                    if InputChanged then return end
+                    InputChanged = Input.Changed:Connect(function()
+                        if Input.UserInputState == Enum.UserInputState.End then
+                            RangeSlider.Sliding = false
+                            RangeSlider.ActiveDrag = nil
+                            InputChanged:Disconnect()
+                            InputChanged = nil
+                        end
+                    end)
+                end
+            end)
+
+            Library:Connect(UserInputService.InputChanged, function(Input)
+                if (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) and RangeSlider.Sliding then
+                    UpdateDrag(Input.Position.X)
+                end
+            end)
+
+            RangeSlider:Set(RangeSlider.Value.Min, RangeSlider.Value.Max)
+
+            Library.SetFlags[RangeSlider.Flag] = function(Value)
+                RangeSlider:Set(Value)
+            end
+
+            return RangeSlider
+        end
+        Library.Sections.MinMaxSlider = Library.Sections.RangeSlider
 
         Library.Sections.Dropdown = function(self, Data)
             Data = Data or { }
@@ -9843,6 +10886,11 @@ Library.Sections.Toggle = function(self, Data)
             end
 
             function Label:Colorpicker(Data)
+                Data = Data or {}
+                if Data.Mode == "Gradient" or Data.Gradient then
+                    return self:GradientColorpicker(Data)
+                end
+
                 local Colorpicker = {
                     Window = self.Window,
                     Page = self.Page,
@@ -9873,6 +10921,50 @@ Library.Sections.Toggle = function(self, Data)
                 })
 
                 return NewColorpicker
+            end
+
+            function Label:GradientColorpicker(Data)
+                Data = Data or {}
+                local def = Data.Default or {}
+                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(195, 145, 85)
+                local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
+                local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
+                local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
+
+                local Gradient = {
+                    Window = self.Window,
+                    Page = self.Page,
+                    Section = self,
+
+                    Name = Data.Name or Data.name or "Gradient Color",
+                    Color1 = c1,
+                    Color2 = c2,
+                    Alpha1 = a1,
+                    Alpha2 = a2,
+                    Flag = Data.Flag or Data.flag or Library:NextFlag(),
+                    Callback = Data.Callback or Data.callback or function() end,
+
+                    Count = Label.Count
+                }
+
+                Label.Count += 1
+                Gradient.Count = Label.Count
+
+                local NewGradient, GradItems = Components.GradientColorpicker({
+                    Window = Gradient.Window,
+                    Page = Gradient.Page,
+                    Parent = Items["SubElements"],
+                    Name = Gradient.Name,
+                    Flag = Gradient.Flag,
+                    Color1 = Gradient.Color1,
+                    Color2 = Gradient.Color2,
+                    Alpha1 = Gradient.Alpha1,
+                    Alpha2 = Gradient.Alpha2,
+                    Callback = Gradient.Callback,
+                    Count = Gradient.Count
+                })
+
+                return NewGradient
             end
 
             function Label:Keybind(Data)
@@ -10084,6 +11176,372 @@ Library.Sections.Toggle = function(self, Data)
 
             return Textbox
         end
+
+        Library.Sections.Viewport = function(self, Data)
+            Data = Data or {}
+            local Viewport = {
+                Window = self.Window,
+                Page = self.Page,
+                Section = self,
+                Name = Data.Name or Data.name,
+                Height = Data.Height or Data.height or 210,
+                Interactive = (Data.Interactive ~= false),
+                AutoRotate = Data.AutoRotate or false,
+                ShowBox = (Data.ShowBox ~= false),
+                BoxColor = Data.BoxColor or (Library.Theme and Library.Theme.Accent) or FromRGB(195, 145, 85),
+                ShowHealth = (Data.ShowHealth ~= false),
+                Health = Data.Health or 100,
+                HealthColor = Data.HealthColor or FromRGB(0, 255, 0),
+                ShowName = (Data.ShowName ~= false),
+                PlayerName = Data.PlayerName or (LocalPlayer and LocalPlayer.DisplayName) or "Player",
+                ShowDistance = (Data.ShowDistance ~= false),
+                Distance = Data.Distance or "25m",
+                Tooltip = Data.Tooltip or Data.tooltip or nil,
+                Type = "Viewport"
+            }
+
+            local Items = {} do
+                Items["Container"] = Instances:Create("Frame", {
+                    Parent = self.Items["Content"].Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, 0, 0, Viewport.Name and (Viewport.Height + 20) or Viewport.Height),
+                    BorderSizePixel = 0,
+                    ZIndex = 2,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+
+                if Viewport.Tooltip then
+                    Items["Container"]:Tooltip(Viewport.Tooltip)
+                end
+
+                if Viewport.Name then
+                    Items["Title"] = Instances:Create("TextLabel", {
+                        Parent = Items["Container"].Instance,
+                        Name = "\0",
+                        FontFace = Library.Font,
+                        TextColor3 = FromRGB(255, 255, 255),
+                        BorderColor3 = FromRGB(0, 0, 0),
+                        Text = Viewport.Name,
+                        AutomaticSize = Enum.AutomaticSize.X,
+                        BackgroundTransparency = 1,
+                        Size = UDim2New(0, 0, 0, 16),
+                        BorderSizePixel = 0,
+                        ZIndex = 2,
+                        TextSize = 13,
+                        BackgroundColor3 = FromRGB(255, 255, 255)
+                    })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
+                end
+
+                Items["ViewportFrame"] = Instances:Create("ViewportFrame", {
+                    Parent = Items["Container"].Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 0,
+                    Position = Viewport.Name and UDim2New(0, 0, 0, 20) or UDim2New(0, 0, 0, 0),
+                    Size = UDim2New(1, 0, 0, Viewport.Height),
+                    BorderSizePixel = 0,
+                    ZIndex = 2,
+                    BackgroundColor3 = FromRGB(20, 23, 27)
+                })  Items["ViewportFrame"]:AddToTheme({BackgroundColor3 = "Inline"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["ViewportFrame"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 5)
+                })
+                local Stroke = Instances:Create("UIStroke", {
+                    Parent = Items["ViewportFrame"].Instance,
+                    Name = "\0",
+                    Color = FromRGB(32, 36, 42),
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                })  Stroke:AddToTheme({Color = "Border"})
+
+                local ViewportCamera = InstanceNew("Camera")
+                ViewportCamera.CameraType = Enum.CameraType.Scriptable
+                Items["ViewportFrame"].Instance.CurrentCamera = ViewportCamera
+
+                local ModelContainer = nil
+                local function LoadModel(char)
+                    if ModelContainer then pcall(function() ModelContainer:Destroy() end) end
+                    pcall(function()
+                        if not char then
+                            char = LocalPlayer and LocalPlayer.Character
+                        end
+                        if char then
+                            char.Archivable = true
+                            ModelContainer = char:Clone()
+                            for _, v in ModelContainer:GetDescendants() do
+                                if v:IsA("LocalScript") or v:IsA("Script") or v:IsA("Sound") then
+                                    v:Destroy()
+                                end
+                            end
+                            local hrp = ModelContainer:FindFirstChild("HumanoidRootPart") or ModelContainer:FindFirstChild("Torso") or ModelContainer:FindFirstChild("UpperTorso")
+                            if hrp then
+                                if not ModelContainer.PrimaryPart then
+                                    ModelContainer.PrimaryPart = hrp
+                                end
+                                ModelContainer.PrimaryPart.Anchored = true
+                                ModelContainer:SetPrimaryPartCFrame(CFrameAngles(0, MathRad(180), 0) + Vector3New(0, 0.5, 0))
+                            end
+                            ModelContainer.Parent = Items["ViewportFrame"].Instance
+                            ViewportCamera.CameraSubject = ModelContainer
+                        end
+                    end)
+                end
+
+                LoadModel(Data.Model)
+                if LocalPlayer and not Data.Model then
+                    LocalPlayer.CharacterAdded:Connect(function(newChar)
+                        task.wait(0.5)
+                        LoadModel(newChar)
+                    end)
+                end
+
+                local Overlay = Instances:Create("Frame", {
+                    Parent = Items["ViewportFrame"].Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, 0, 1, 0),
+                    BorderSizePixel = 0,
+                    ZIndex = 5,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+
+                local BoxFrame = Instances:Create("Frame", {
+                    Parent = Overlay.Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    AnchorPoint = Vector2New(0.5, 0.5),
+                    Position = UDim2New(0.5, 0, 0.52, 0),
+                    Size = UDim2New(0, 95, 0, 150),
+                    BorderSizePixel = 0,
+                    ZIndex = 6,
+                    Visible = Viewport.ShowBox,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+
+                local BoxStroke = Instances:Create("UIStroke", {
+                    Parent = BoxFrame.Instance,
+                    Name = "\0",
+                    Color = Viewport.BoxColor,
+                    Thickness = 1,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                })
+
+                local Healthbar = Instances:Create("Frame", {
+                    Parent = BoxFrame.Instance,
+                    Name = "\0",
+                    AnchorPoint = Vector2New(1, 0),
+                    Position = UDim2New(0, -5, 0, 0),
+                    Size = UDim2New(0, 3, 1, 0),
+                    BorderSizePixel = 0,
+                    ZIndex = 6,
+                    Visible = Viewport.ShowHealth,
+                    BackgroundColor3 = FromRGB(15, 15, 15)
+                })
+                local HealthFill = Instances:Create("Frame", {
+                    Parent = Healthbar.Instance,
+                    Name = "\0",
+                    AnchorPoint = Vector2New(0, 1),
+                    Position = UDim2New(0, 0, 1, 0),
+                    Size = UDim2New(1, 0, math.clamp(Viewport.Health / 100, 0, 1), 0),
+                    BorderSizePixel = 0,
+                    ZIndex = 7,
+                    BackgroundColor3 = Viewport.HealthColor
+                })
+
+                local NameLabel = Instances:Create("TextLabel", {
+                    Parent = BoxFrame.Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    AnchorPoint = Vector2New(0.5, 1),
+                    Position = UDim2New(0.5, 0, 0, -4),
+                    Text = Viewport.PlayerName,
+                    TextColor3 = FromRGB(255, 255, 255),
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(0, 100, 0, 14),
+                    TextSize = 11,
+                    ZIndex = 7,
+                    Visible = Viewport.ShowName
+                })
+
+                local DistLabel = Instances:Create("TextLabel", {
+                    Parent = BoxFrame.Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    AnchorPoint = Vector2New(0.5, 0),
+                    Position = UDim2New(0.5, 0, 1, 4),
+                    Text = Viewport.Distance,
+                    TextColor3 = FromRGB(200, 200, 200),
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(0, 100, 0, 14),
+                    TextSize = 10,
+                    ZIndex = 7,
+                    Visible = Viewport.ShowDistance
+                })
+
+                local CurrentYaw = MathRad(180)
+                local CurrentPitch = 0
+                local CamDistance = Data.CameraDistance or 5.5
+                local CamOffset = Data.CameraOffset or Vector3New(0, 1.2, 0)
+
+                local function UpdateCamera()
+                    local cf = CFrameAngles(0, CurrentYaw, 0) * CFrameAngles(CurrentPitch, 0, 0)
+                    local camPos = CamOffset + (cf * Vector3New(0, 0, CamDistance))
+                    ViewportCamera.CFrame = CFrameNew(camPos, CamOffset)
+                end
+                UpdateCamera()
+
+                local isDragging = false
+                local lastMousePos
+
+                if Viewport.Interactive then
+                    Items["ViewportFrame"]:Connect("InputBegan", function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            isDragging = true
+                            lastMousePos = input.Position
+                        end
+                    end)
+                    Library:Connect(UserInputService.InputChanged, function(input)
+                        if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                            local delta = input.Position - lastMousePos
+                            lastMousePos = input.Position
+                            CurrentYaw = CurrentYaw - (delta.X * 0.015)
+                            CurrentPitch = math.clamp(CurrentPitch - (delta.Y * 0.01), MathRad(-50), MathRad(50))
+                            UpdateCamera()
+                        end
+                    end)
+                    Library:Connect(UserInputService.InputEnded, function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            isDragging = false
+                        end
+                    end)
+                end
+
+                if Viewport.AutoRotate then
+                    Library:Connect(RunService.RenderStepped, function(dt)
+                        if not isDragging then
+                            CurrentYaw = CurrentYaw + (dt * 0.8)
+                            UpdateCamera()
+                        end
+                    end)
+                end
+
+                function Viewport:SetBox(visible, color)
+                    Viewport.ShowBox = (visible == true)
+                    BoxFrame.Instance.Visible = Viewport.ShowBox
+                    if color then
+                        Viewport.BoxColor = color
+                        BoxStroke.Instance.Color = color
+                    end
+                end
+
+                function Viewport:SetHealth(visible, healthNum, color)
+                    Viewport.ShowHealth = (visible == true)
+                    Healthbar.Instance.Visible = Viewport.ShowHealth
+                    if healthNum then
+                        Viewport.Health = healthNum
+                        HealthFill.Instance.Size = UDim2New(1, 0, math.clamp(healthNum / 100, 0, 1), 0)
+                    end
+                    if color then
+                        Viewport.HealthColor = color
+                        HealthFill.Instance.BackgroundColor3 = color
+                    end
+                end
+
+                function Viewport:SetName(visible, text, color)
+                    Viewport.ShowName = (visible == true)
+                    NameLabel.Instance.Visible = Viewport.ShowName
+                    if text then NameLabel.Instance.Text = tostring(text) end
+                    if color then NameLabel.Instance.TextColor3 = color end
+                end
+
+                function Viewport:SetDistance(visible, text, color)
+                    Viewport.ShowDistance = (visible == true)
+                    DistLabel.Instance.Visible = Viewport.ShowDistance
+                    if text then DistLabel.Instance.Text = tostring(text) end
+                    if color then DistLabel.Instance.TextColor3 = color end
+                end
+
+                function Viewport:SetModel(newModel)
+                    LoadModel(newModel)
+                end
+
+                function Viewport:SetVisibility(bool)
+                    Items["Container"].Instance.Visible = bool
+                end
+
+                Viewport.Items = Items
+                Viewport.Container = Items["Container"]
+                Viewport.Frame = Items["ViewportFrame"]
+                Viewport.Box = BoxFrame
+                Viewport.Healthbar = Healthbar
+            end
+
+            return Viewport
+        end
+
+        Library.Sections.ESPPreview = function(self, Data)
+            Data = Data or {}
+            Data.Name = Data.Name or "ESP Preview"
+            return self:Viewport(Data)
+        end
+
+        Library.Sections.GradientColorpicker = function(self, Data)
+            Data = Data or {}
+            local def = Data.Default or {}
+            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(195, 145, 85)
+            local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
+            local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
+            local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
+
+            local Container = Instances:Create("Frame", {
+                Parent = self.Items["Content"].Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                Size = UDim2New(1, 0, 0, 30),
+                BorderSizePixel = 0,
+                ZIndex = 2,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })
+
+            local TextLabel = Instances:Create("TextLabel", {
+                Parent = Container.Instance,
+                Name = "\0",
+                FontFace = Library.Font,
+                TextColor3 = FromRGB(255, 255, 255),
+                BorderColor3 = FromRGB(0, 0, 0),
+                Text = Data.Name or "Gradient Color",
+                AutomaticSize = Enum.AutomaticSize.X,
+                BackgroundTransparency = 1,
+                Size = UDim2New(0, 0, 1, 0),
+                BorderSizePixel = 0,
+                ZIndex = 2,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                BackgroundColor3 = FromRGB(255, 255, 255)
+            })  TextLabel:AddToTheme({TextColor3 = "Text"})
+
+            if Data.Tooltip then
+                Container:Tooltip(Data.Tooltip)
+            end
+
+            local NewGradient, GradItems = Components.GradientColorpicker({
+                Window = self.Window,
+                Page = self.Page,
+                Parent = Container,
+                Name = Data.Name or "Gradient Color",
+                Flag = Data.Flag or Library:NextFlag(),
+                Color1 = c1,
+                Color2 = c2,
+                Alpha1 = a1,
+                Alpha2 = a2,
+                Callback = Data.Callback,
+                Count = 0
+            })
+
+            return NewGradient
+        end
     end
 
     Library.Init = function(self)
@@ -10160,8 +11618,10 @@ local SaveManager = {} do
     local TypeAliases = {
         toggle = "Toggle", Toggle = "Toggle",
         slider = "Slider", Slider = "Slider",
+        rangeslider = "RangeSlider", RangeSlider = "RangeSlider", minmaxslider = "RangeSlider", MinMaxSlider = "RangeSlider",
         dropdown = "Dropdown", Dropdown = "Dropdown",
         colorpicker = "Colorpicker", Colorpicker = "Colorpicker", ColorPicker = "Colorpicker", color = "Colorpicker",
+        gradientcolorpicker = "GradientColorpicker", GradientColorpicker = "GradientColorpicker",
         keybind = "Keybind", Keybind = "Keybind", KeyBind = "Keybind", bind = "Keybind",
         input = "Input", Input = "Input", textbox = "Input", Textbox = "Input", TextBox = "Input",
     }
@@ -10204,6 +11664,27 @@ local SaveManager = {} do
                     SaveManager.Library.SetFlags[idx](v)
                 end
             end,
+        },
+        RangeSlider = {
+            Save = function(idx, object)
+                local v = object.Value or {}
+                return {
+                    type = "RangeSlider",
+                    idx = idx,
+                    min = tonumber(v.Min or v[1]) or 0,
+                    max = tonumber(v.Max or v[2]) or 100
+                }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local minV = tonumber(data.min or (type(data.value) == "table" and (data.value.Min or data.value[1]))) or 0
+                local maxV = tonumber(data.max or (type(data.value) == "table" and (data.value.Max or data.value[2]))) or 100
+                if obj and obj.Set then
+                    obj:Set(minV, maxV)
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx]({ Min = minV, Max = maxV })
+                end
+            end
         },
         Dropdown = {
             Save = function(idx, object)
@@ -10258,6 +11739,38 @@ local SaveManager = {} do
                     SaveManager.Library.SetFlags[idx](color, alpha)
                 end
             end,
+        },
+        GradientColorpicker = {
+            Save = function(idx, object)
+                local c1 = object.Color1 or Color3.new(1, 1, 1)
+                local c2 = object.Color2 or Color3.new(1, 1, 1)
+                local a1 = tonumber(object.Alpha1) or 1
+                local a2 = tonumber(object.Alpha2) or 1
+                return {
+                    type = "GradientColorpicker",
+                    idx = idx,
+                    color1 = typeof(c1) == "Color3" and c1:ToHex() or "ffffff",
+                    color2 = typeof(c2) == "Color3" and c2:ToHex() or "ffffff",
+                    alpha1 = a1,
+                    alpha2 = a2
+                }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local h1 = tostring(data.color1 or "ffffff"):gsub("^#", "")
+                local h2 = tostring(data.color2 or "ffffff"):gsub("^#", "")
+                local ok1, c1 = pcall(Color3.fromHex, h1)
+                local ok2, c2 = pcall(Color3.fromHex, h2)
+                c1 = ok1 and c1 or Color3.new(1, 1, 1)
+                c2 = ok2 and c2 or Color3.new(1, 1, 1)
+                local a1 = tonumber(data.alpha1) or 1
+                local a2 = tonumber(data.alpha2) or 1
+                if obj and obj.Set then
+                    obj:Set(c1, c2, a1, a2)
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx]({ Color1 = c1, Color2 = c2, Alpha1 = a1, Alpha2 = a2 })
+                end
+            end
         },
         Keybind = {
             Save = function(idx, object)
@@ -10351,10 +11864,14 @@ local SaveManager = {} do
             if not optType then
                 if option.Key ~= nil or option.Toggled ~= nil or option.Picking ~= nil then
                     optType = "Keybind"
+                elseif option.Color1 ~= nil or option.Hue1 ~= nil then
+                    optType = "GradientColorpicker"
                 elseif option.HexValue ~= nil or (option.Hue ~= nil and option.Saturation ~= nil) then
                     optType = "Colorpicker"
                 elseif type(option.Value) == "boolean" then
                     optType = "Toggle"
+                elseif type(option.Value) == "table" and (option.Value.Min ~= nil and option.Value.Max ~= nil) then
+                    optType = "RangeSlider"
                 elseif type(option.Value) == "number" or option.Min ~= nil or option.Max ~= nil then
                     optType = "Slider"
                 elseif option.Options ~= nil or option.Items ~= nil then
@@ -10400,7 +11917,7 @@ local SaveManager = {} do
         if not success then return false, "decode error" end
 
         if decoded and decoded.objects then
-            local loadOrder = { Toggle = 1, Slider = 2, Dropdown = 3, Colorpicker = 4, Keybind = 5, Input = 6 }
+            local loadOrder = { Toggle = 1, Slider = 2, RangeSlider = 2, Dropdown = 3, Colorpicker = 4, GradientColorpicker = 4, Keybind = 5, Input = 6 }
             local sorted = {}
             for _, option in next, decoded.objects do
                 table.insert(sorted, option)
@@ -10421,6 +11938,115 @@ local SaveManager = {} do
                             warn("[SaveManager] Failed to load " .. tostring(option.idx) .. ": " .. tostring(err))
                         end
                     end
+                end
+            end
+        end
+
+        return true
+    end
+
+    function SaveManager:ExportToClipboard(name)
+        local encoded
+        if name and name ~= "" then
+            local cleanName = name
+            if cleanName:sub(-5):lower() == ".json" then cleanName = cleanName:sub(1, -6) end
+            local file = self.Folder .. "/settings/" .. cleanName .. ".json"
+            if not isfile(file) then return false, "config file does not exist" end
+            encoded = readfile(file)
+        else
+            local data = { objects = {} }
+            local optionsSource = self.Options
+            if not optionsSource or next(optionsSource) == nil then
+                optionsSource = getgenv().Options or (self.Library and self.Library.Options) or {}
+            end
+
+            for idx, _ in pairs(optionsSource) do
+                if type(idx) == "string" and (idx:match("ModeDropdown$") or idx:match("keybindToggle$") or idx:match("AnimationDropdown$")) then
+                    self.Ignore[idx] = true
+                end
+            end
+
+            for idx, option in pairs(optionsSource) do
+                if self.Ignore[idx] then continue end
+                local optType = option.Type
+                if not optType then
+                    if option.Key ~= nil or option.Toggled ~= nil or option.Picking ~= nil then
+                        optType = "Keybind"
+                    elseif option.Color1 ~= nil or option.Hue1 ~= nil then
+                        optType = "GradientColorpicker"
+                    elseif option.HexValue ~= nil or (option.Hue ~= nil and option.Saturation ~= nil) then
+                        optType = "Colorpicker"
+                    elseif type(option.Value) == "boolean" then
+                        optType = "Toggle"
+                    elseif type(option.Value) == "table" and (option.Value.Min ~= nil and option.Value.Max ~= nil) then
+                        optType = "RangeSlider"
+                    elseif type(option.Value) == "number" or option.Min ~= nil or option.Max ~= nil then
+                        optType = "Slider"
+                    elseif option.Options ~= nil or option.Items ~= nil then
+                        optType = "Dropdown"
+                    elseif type(option.Value) == "string" then
+                        optType = "Input"
+                    end
+                end
+                if optType then
+                    local parser = ResolveParser(optType)
+                    if parser and parser.Save then
+                        local ok, entry = pcall(parser.Save, idx, option)
+                        if ok and entry then
+                            table.insert(data.objects, entry)
+                        end
+                    end
+                end
+            end
+
+            local success, json = pcall(httpService.JSONEncode, httpService, data)
+            if not success then return false, "failed to encode data" end
+            encoded = json
+        end
+
+        local setClip = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
+        if not setClip then
+            return false, "executor missing clipboard support"
+        end
+        local okClip = pcall(setClip, encoded)
+        if not okClip then return false, "failed to write to clipboard" end
+        return true
+    end
+
+    function SaveManager:ImportFromClipboard()
+        local getClip = getclipboard or get_clipboard or (Clipboard and Clipboard.get)
+        if not getClip then
+            return false, "executor missing clipboard support"
+        end
+        local rawStr
+        local okClip, res = pcall(getClip)
+        if okClip and type(res) == "string" then rawStr = res end
+        if not rawStr or rawStr:gsub("%s+", "") == "" then
+            return false, "clipboard is empty"
+        end
+
+        local success, decoded = pcall(httpService.JSONDecode, httpService, rawStr)
+        if not success or not decoded or not decoded.objects then
+            return false, "invalid clipboard config"
+        end
+
+        local loadOrder = { Toggle = 1, Slider = 2, RangeSlider = 2, Dropdown = 3, Colorpicker = 4, GradientColorpicker = 4, Keybind = 5, Input = 6 }
+        local sorted = {}
+        for _, option in next, decoded.objects do
+            table.insert(sorted, option)
+        end
+        table.sort(sorted, function(a, b)
+            local aType = TypeAliases[a.type or ""] or a.type or ""
+            local bType = TypeAliases[b.type or ""] or b.type or ""
+            return (loadOrder[aType] or 99) < (loadOrder[bType] or 99)
+        end)
+
+        for _, option in ipairs(sorted) do
+            local optType = option.type
+            if optType then
+                local parser = ResolveParser(optType)
+                if parser and parser.Load then
+                    pcall(parser.Load, option.idx, option)
                 end
             end
         end
@@ -10591,6 +12217,30 @@ local SaveManager = {} do
 
                 writefile(self.Folder .. "/settings/autoload.txt", name)
                 self:Notify(string.format("Set %q to auto load", name))
+            end
+        })
+
+        section:Button({
+            Name = "Export to clipboard",
+            Callback = function()
+                local name = SaveManager.Options.SaveManager_ConfigList and SaveManager.Options.SaveManager_ConfigList.Value or ""
+                if type(name) == "table" then name = name[1] end
+                local success, err = self:ExportToClipboard(name ~= "" and name or nil)
+                if not success then
+                    return self:Notify("Failed to export: " .. tostring(err))
+                end
+                self:Notify("Copied config to clipboard")
+            end
+        })
+
+        section:Button({
+            Name = "Import from clipboard",
+            Callback = function()
+                local success, err = self:ImportFromClipboard()
+                if not success then
+                    return self:Notify("Failed to import: " .. tostring(err))
+                end
+                self:Notify("Loaded config from clipboard")
             end
         })
 
