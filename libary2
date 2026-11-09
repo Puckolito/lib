@@ -7511,11 +7511,26 @@ local Library do
             return Notification
         end
 
-        Library.Watermark = function(self, Text, Logo, LogoColor)
+        Library.Watermark = function(self, Text, Logo, LogoColor, LogoSize)
             local Watermark = { }
             Text = Text or (self.CurrentWindow and self.CurrentWindow.Name) or "Merquryhub"
             Logo = Logo or (self.CurrentWindow and self.CurrentWindow.Logo) or "99625375324748"
+            LogoSize = LogoSize or (self.CurrentWindow and self.CurrentWindow.LogoSize) or 22
             local _resolvedLogo, _hasLogo = Library:ResolveAsset(Logo)
+            local _wmLogoUDim = UDim2New(0, 22, 0, 22)
+            if LogoSize then
+                if typeof(LogoSize) == "UDim2" then
+                    _wmLogoUDim = LogoSize
+                elseif typeof(LogoSize) == "Vector2" then
+                    _wmLogoUDim = UDim2New(0, LogoSize.X, 0, LogoSize.Y)
+                elseif type(LogoSize) == "number" then
+                    _wmLogoUDim = UDim2New(0, LogoSize, 0, LogoSize)
+                elseif type(LogoSize) == "table" then
+                    local w = tonumber(LogoSize.X or LogoSize[1] or LogoSize.Width) or 22
+                    local h = tonumber(LogoSize.Y or LogoSize[2] or LogoSize.Height) or 22
+                    _wmLogoUDim = UDim2New(0, w, 0, h)
+                end
+            end
 
             local Items = { } do
                 Items["Watermark"] = Instances:Create("Frame", {
@@ -7555,7 +7570,7 @@ local Library do
                     ImageColor3 = LogoColor or FromRGB(255, 255, 255),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = _hasLogo and UDim2New(0, 22, 0, 22) or UDim2New(0, 0, 0, 0),
+                    Size = _hasLogo and _wmLogoUDim or UDim2New(0, 0, 0, 0),
                     AnchorPoint = Vector2New(0, 0.5),
                     Image = _resolvedLogo,
                     Visible = _hasLogo,
@@ -7786,6 +7801,7 @@ local Library do
             local Window = {
                 Name = Data.Name or Data.name or "Merquryhub",
                 Logo = Data.Logo or Data.logo or "99625375324748",
+                LogoSize = Data.LogoSize or Data.logosize or 22,
                 LogoColor = Data.LogoColor or Data.logocolor,
                 FadeSpeed = Data.FadeSpeed or Data.fadespeed or 0.2,
                 Version = Data.Version or Data.version or "v1.0.0 alpha",
@@ -7940,6 +7956,21 @@ local Library do
                 end})
 
                 local _resolvedLogo, _hasLogo = Library:ResolveAsset(Window.Logo)
+                local _logoUDim, _logoW = UDim2New(0, 22, 0, 22), 22
+                if Window.LogoSize then
+                    local s = Window.LogoSize
+                    if typeof(s) == "UDim2" then
+                        _logoUDim, _logoW = s, s.X.Offset
+                    elseif typeof(s) == "Vector2" then
+                        _logoUDim, _logoW = UDim2New(0, s.X, 0, s.Y), s.X
+                    elseif type(s) == "number" then
+                        _logoUDim, _logoW = UDim2New(0, s, 0, s), s
+                    elseif type(s) == "table" then
+                        local w = tonumber(s.X or s[1] or s.Width) or 22
+                        local h = tonumber(s.Y or s[2] or s.Height) or 22
+                        _logoUDim, _logoW = UDim2New(0, w, 0, h), w
+                    end
+                end
 
                 Items["Logo"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
@@ -7947,7 +7978,7 @@ local Library do
                     ImageColor3 = Window.LogoColor or FromRGB(255, 255, 255),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = _hasLogo and UDim2New(0, 22, 0, 22) or UDim2New(0, 0, 0, 0),
+                    Size = _hasLogo and _logoUDim or UDim2New(0, 0, 0, 0),
                     AnchorPoint = Vector2New(0, 0.5),
                     Image = _resolvedLogo,
                     BackgroundTransparency = 1,
@@ -7975,7 +8006,7 @@ local Library do
                     Text = Window.Name,
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    Position = _hasLogo and UDim2New(0, 37, 0.5, 0) or UDim2New(0, 12, 0.5, 0),
+                    Position = _hasLogo and UDim2New(0, 10 + _logoW + 5, 0.5, 0) or UDim2New(0, 12, 0.5, 0),
                     BorderSizePixel = 0,
                     AutomaticSize = Enum.AutomaticSize.X,
                     BackgroundColor3 = FromRGB(255, 255, 255)
