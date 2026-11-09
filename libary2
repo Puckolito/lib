@@ -91,12 +91,12 @@ local Options, MiscOptions do
 
         ["Boxes"] = false;
         ["BoxType"] = "Corner";
-        ["Box Gradient 1"] = { Color = rgb(195, 145, 85), Transparency = 0.9 };
+        ["Box Gradient 1"] = { Color = rgb(225, 115, 52), Transparency = 0.9 };
         ["Box Gradient 2"] = { Color = rgb(255, 0, 0), Transparency = 0.4 };
         ["Box Gradient Rotation"] = 90;
         ["Box Fill"] = false;
-        ["Box Fill 1"] = { Color = rgb(195, 145, 85), Transparency = 0.9 };
-        ["Box Fill 2"] = { Color = rgb(195, 145, 85), Transparency = 0.9 };
+        ["Box Fill 1"] = { Color = rgb(225, 115, 52), Transparency = 0.9 };
+        ["Box Fill 2"] = { Color = rgb(225, 115, 52), Transparency = 0.9 };
         ["Box Fill Rotation"] = 0;
 
         ["Healthbar"] = false;
@@ -2103,7 +2103,7 @@ local Library do
             ["Dark Gradient"] = FromRGB(211, 211, 211),
             ["Inactive Text"] = FromRGB(185, 185, 185),
             ["Element"] = FromRGB(34, 39, 45),
-            ["Accent"] = FromRGB(195, 145, 85),
+            ["Accent"] = FromRGB(225, 115, 52),
             ["Border"] = FromRGB(32, 36, 42)
         },
 
@@ -2116,7 +2116,7 @@ local Library do
             ["Dark Gradient"] = FromRGB(211, 202, 195),
             ["Inactive Text"] = FromRGB(179, 179, 179),
             ["Element"] = FromRGB(42, 32, 26),
-            ["Accent"] = FromRGB(195, 145, 85),
+            ["Accent"] = FromRGB(225, 115, 52),
             ["Border"] = FromRGB(42, 35, 32)
         },
 
@@ -2148,6 +2148,7 @@ local Library do
     }
 
     Themes["Bronze"] = TableClone(Themes["Preset"])
+    Themes["Burnt Bronze"] = TableClone(Themes["Preset"])
 
     Library.Theme = TableClone(Themes["Preset"])
     Library.Themes = Themes
@@ -2905,6 +2906,7 @@ local Library do
                 Items["Holder"] = Instances:Create("Frame", {
                     Parent = Items["Dropdown"].Instance,
                     Name = "\0",
+                    AnchorPoint = Vector2New(0, 0),
                     BackgroundTransparency = 0,
                     ClipsDescendants = true,
                     Position = UDim2New(0, 0, 1, 5),
@@ -3019,6 +3021,9 @@ local Library do
             end
 
             function Dropdown:AddOption(Option)
+                local _currentOptCount = 0
+                for _ in pairs(Dropdown.Options) do _currentOptCount = _currentOptCount + 1 end
+
                 local OptionButton = Instances:Create("TextButton", {
                     Parent = Items["Holder"].Instance,
                     Name = "\0",
@@ -3030,6 +3035,7 @@ local Library do
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
                     Size = UDim2New(1, -5, 0, 25),
+                    LayoutOrder = _currentOptCount + 1,
                     ZIndex = 5,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(16, 18, 21)
@@ -3187,14 +3193,29 @@ local Library do
                     Items["Holder"].Instance.ZIndex = 11
 
                     RenderStepped = RunService.RenderStepped:Connect(function()
-                        Items["Holder"].Instance.Position = UDim2New(0, Items["RealDropdown"].Instance.AbsolutePosition.X, 0, Items["RealDropdown"].Instance.AbsolutePosition.Y + 30)
+                        local realDropdown = Items["RealDropdown"].Instance
                         local _optCount = 0
                         for _ in pairs(Dropdown.Options) do _optCount = _optCount + 1 end
                         if _optCount == 0 then _optCount = 1 end
                         local _maxLimit = (Data.MaxSize and Data.MaxSize <= 15) and Data.MaxSize or 6
                         local _actualCount = math.min(_optCount, _maxLimit)
-                        local _calculatedHeight = _actualCount * 25 + 8
-                        Items["Holder"].Instance.Size = UDim2New(0, Items["RealDropdown"].Instance.AbsoluteSize.X, 0, _calculatedHeight)
+                        local _calculatedHeight = (_actualCount * 25) + math.max(0, _actualCount - 1) * 3 + 8
+
+                        local cam = GetCamera()
+                        local vpHeight = (cam and cam.ViewportSize.Y > 200) and cam.ViewportSize.Y or 720
+                        local realY = realDropdown.AbsolutePosition.Y
+                        local realHeight = realDropdown.AbsoluteSize.Y
+                        local dropDownY = realY + realHeight + 4
+
+                        -- Smart viewport collision: Drop DOWN by default, flip UP only if overflowing screen bottom
+                        if (dropDownY + _calculatedHeight > vpHeight - 10) and (realY - _calculatedHeight - 4 > 10) then
+                            Items["Holder"].Instance.AnchorPoint = Vector2New(0, 1)
+                            Items["Holder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realY - 4)
+                        else
+                            Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
+                            Items["Holder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
+                        end
+                        Items["Holder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, _calculatedHeight)
                     end)
 
                     for Index, Value in Library.OpenFrames do
@@ -3766,7 +3787,7 @@ local Library do
                     DropdownItems["OpenIcon"] = Instances:Create("ImageLabel", {
                         Parent = DropdownItems["RealDropdown"].Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(195, 145, 85),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 20, 0, 20),
@@ -3783,6 +3804,7 @@ local Library do
                     DropdownItems["OptionHolder"] = Instances:Create("TextButton", {
                         Parent = DropdownItems["Dropdown"].Instance,
                         Name = "\0",
+                        AnchorPoint = Vector2New(0, 0),
                         FontFace = Library.Font,
                         TextColor3 = FromRGB(0, 0, 0),
                         BorderColor3 = FromRGB(0, 0, 0),
@@ -3866,7 +3888,7 @@ local Library do
                     local CheckImage = Instances:Create("ImageLabel", {
                         Parent = OptionButton.Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(195, 145, 85),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 18, 0, 18),
@@ -3997,8 +4019,21 @@ local Library do
                         DropdownItems["OptionHolder"].Instance.Visible = true
 
                         RenderStepped = RunService.RenderStepped:Connect(function()
-                            DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsolutePosition.X, 0,  DropdownItems["RealDropdown"].Instance.AbsolutePosition.Y + DropdownItems["RealDropdown"].Instance.AbsoluteSize.Y + 5)
-                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, 85)
+                            local realDropdown = DropdownItems["RealDropdown"].Instance
+                            local cam = GetCamera()
+                            local vpHeight = (cam and cam.ViewportSize.Y > 200) and cam.ViewportSize.Y or 720
+                            local realY = realDropdown.AbsolutePosition.Y
+                            local realHeight = realDropdown.AbsoluteSize.Y
+                            local dropDownY = realY + realHeight + 5
+
+                            if (dropDownY + 85 > vpHeight - 10) and (realY - 85 - 4 > 10) then
+                                DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 1)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realY - 4)
+                            else
+                                DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 0)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
+                            end
+                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, 85)
                         end)
                     else
                         if RenderStepped then
@@ -4424,7 +4459,7 @@ local Library do
         Components.GradientColorpicker = function(Data)
             Data = Data or {}
             local def = Data.Default or {}
-            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(195, 145, 85)
+            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(225, 115, 52)
             local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
             local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
             local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
@@ -5150,7 +5185,7 @@ local Library do
                     DropdownItems["OpenIcon"] = Instances:Create("ImageLabel", {
                         Parent = DropdownItems["RealDropdown"].Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(195, 145, 85),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 20, 0, 20),
@@ -5167,6 +5202,7 @@ local Library do
                     DropdownItems["OptionHolder"] = Instances:Create("TextButton", {
                         Parent = DropdownItems["Dropdown"].Instance,
                         Name = "\0",
+                        AnchorPoint = Vector2New(0, 0),
                         FontFace = Library.Font,
                         TextColor3 = FromRGB(0, 0, 0),
                         BorderColor3 = FromRGB(0, 0, 0),
@@ -5432,8 +5468,21 @@ local Library do
                         DropdownItems["OptionHolder"].Instance.Visible = true
 
                         RenderStepped = RunService.RenderStepped:Connect(function()
-                            DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsolutePosition.X, 0,  DropdownItems["RealDropdown"].Instance.AbsolutePosition.Y + DropdownItems["RealDropdown"].Instance.AbsoluteSize.Y + 5)
-                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, 85)
+                            local realDropdown = DropdownItems["RealDropdown"].Instance
+                            local cam = GetCamera()
+                            local vpHeight = (cam and cam.ViewportSize.Y > 200) and cam.ViewportSize.Y or 720
+                            local realY = realDropdown.AbsolutePosition.Y
+                            local realHeight = realDropdown.AbsoluteSize.Y
+                            local dropDownY = realY + realHeight + 5
+
+                            if (dropDownY + 85 > vpHeight - 10) and (realY - 85 - 4 > 10) then
+                                DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 1)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realY - 4)
+                            else
+                                DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 0)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
+                            end
+                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, 85)
                         end)
                     else
                         if RenderStepped then
@@ -6868,7 +6917,7 @@ local Library do
                 Items["Logo"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(195, 145, 85),
+                    ImageColor3 = FromRGB(225, 115, 52),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = UDim2New(0, 20, 0, 20),
@@ -7056,7 +7105,7 @@ local Library do
                 Items["SendImageLabel"] = Instances:Create("ImageLabel", {
                     Parent = Items["SendMessageButton"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(195, 145, 85),
+                    ImageColor3 = FromRGB(225, 115, 52),
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(0.5, 0.5),
                     Image = "rbxassetid://93681479181206",
@@ -7073,7 +7122,7 @@ local Library do
                     AutomaticCanvasSize = Enum.AutomaticSize.Y,
                     BorderSizePixel = 0,
                     CanvasSize = UDim2New(0, 0, 0, 0),
-                    ScrollBarImageColor3 = FromRGB(195, 145, 85),
+                    ScrollBarImageColor3 = FromRGB(225, 115, 52),
                     MidImage = "rbxassetid://76010408336709",
                     BorderColor3 = FromRGB(0, 0, 0),
                     ScrollBarThickness = 2,
@@ -7517,18 +7566,18 @@ local Library do
             Logo = Logo or (self.CurrentWindow and self.CurrentWindow.Logo) or "99625375324748"
             LogoSize = LogoSize or (self.CurrentWindow and self.CurrentWindow.LogoSize) or 22
             local _resolvedLogo, _hasLogo = Library:ResolveAsset(Logo)
-            local _wmLogoUDim = UDim2New(0, 22, 0, 22)
+            local _wmLogoUDim, _wmLogoW = UDim2New(0, 22, 0, 22), 22
             if LogoSize then
                 if typeof(LogoSize) == "UDim2" then
-                    _wmLogoUDim = LogoSize
+                    _wmLogoUDim, _wmLogoW = LogoSize, LogoSize.X.Offset
                 elseif typeof(LogoSize) == "Vector2" then
-                    _wmLogoUDim = UDim2New(0, LogoSize.X, 0, LogoSize.Y)
+                    _wmLogoUDim, _wmLogoW = UDim2New(0, LogoSize.X, 0, LogoSize.Y), LogoSize.X
                 elseif type(LogoSize) == "number" then
-                    _wmLogoUDim = UDim2New(0, LogoSize, 0, LogoSize)
+                    _wmLogoUDim, _wmLogoW = UDim2New(0, LogoSize, 0, LogoSize), LogoSize
                 elseif type(LogoSize) == "table" then
                     local w = tonumber(LogoSize.X or LogoSize[1] or LogoSize.Width) or 22
                     local h = tonumber(LogoSize.Y or LogoSize[2] or LogoSize.Height) or 22
-                    _wmLogoUDim = UDim2New(0, w, 0, h)
+                    _wmLogoUDim, _wmLogoW = UDim2New(0, w, 0, h), w
                 end
             end
 
@@ -7594,7 +7643,7 @@ local Library do
                     AnchorPoint = Vector2New(0, 0.5),
                     Size = UDim2New(0, 0, 0, 15),
                     BackgroundTransparency = 1,
-                    Position = _hasLogo and UDim2New(0, 35, 0.5, 0) or UDim2New(0, 10, 0.5, 0),
+                    Position = _hasLogo and UDim2New(0, 10 + _wmLogoW + 4, 0.5, 0) or UDim2New(0, 10, 0.5, 0),
                     BorderSizePixel = 0,
                     AutomaticSize = Enum.AutomaticSize.X,
                     ZIndex = 99999,
@@ -7616,6 +7665,18 @@ local Library do
 
             function Watermark:SetText(Text)
                 Items["Text"].Instance.Text = tostring(Text)
+            end
+
+            function Watermark:SetLogo(newLogo, newSize)
+                if newSize then
+                    local udim = (type(newSize) == "number" and UDim2New(0, newSize, 0, newSize)) or newSize
+                    Items["Logo"].Instance.Size = udim
+                end
+                if newLogo then
+                    local uri, has = Library:ResolveAsset(newLogo)
+                    Items["Logo"].Instance.Image = uri
+                    Items["Logo"].Instance.Visible = has
+                end
             end
 
             self.WatermarkFrame = Items["Watermark"].Instance
@@ -7659,7 +7720,7 @@ local Library do
                 Items["Icon"] = Instances:Create("ImageLabel", {
                     Parent = Items["KeybindsList"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(195, 145, 85),
+                    ImageColor3 = FromRGB(225, 115, 52),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Image = "rbxassetid://89224403789635",
@@ -9256,7 +9317,7 @@ local Library do
                     DropdownItems["OpenIcon"] = Instances:Create("ImageLabel", {
                         Parent = DropdownItems["RealDropdown"].Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(195, 145, 85),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 20, 0, 20),
@@ -9273,6 +9334,7 @@ local Library do
                     DropdownItems["OptionHolder"] = Instances:Create("TextButton", {
                         Parent = Library.Holder.Instance,
                         Name = "\0",
+                        AnchorPoint = Vector2New(0, 0),
                         FontFace = Library.Font,
                         TextColor3 = FromRGB(0, 0, 0),
                         BorderColor3 = FromRGB(0, 0, 0),
@@ -9363,7 +9425,7 @@ local Library do
                     local CheckImage = Instances:Create("ImageLabel", {
                         Parent = OptionButton.Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(195, 145, 85),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 18, 0, 18),
@@ -9489,8 +9551,21 @@ local Library do
                         DropdownItems["OptionHolder"].Instance.Visible = true
 
                         RenderStepped = RunService.RenderStepped:Connect(function()
-                            DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsolutePosition.X, 0,  DropdownItems["RealDropdown"].Instance.AbsolutePosition.Y + DropdownItems["RealDropdown"].Instance.AbsoluteSize.Y + 5)
-                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, 85)
+                            local realDropdown = DropdownItems["RealDropdown"].Instance
+                            local cam = GetCamera()
+                            local vpHeight = (cam and cam.ViewportSize.Y > 200) and cam.ViewportSize.Y or 720
+                            local realY = realDropdown.AbsolutePosition.Y
+                            local realHeight = realDropdown.AbsoluteSize.Y
+                            local dropDownY = realY + realHeight + 5
+
+                            if (dropDownY + 85 > vpHeight - 10) and (realY - 85 - 4 > 10) then
+                                DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 1)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realY - 4)
+                            else
+                                DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 0)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
+                            end
+                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, 85)
                         end)
                     else
                         if RenderStepped then
@@ -9913,7 +9988,7 @@ local Library do
                 Items["Icon"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(195, 145, 85),
+                    ImageColor3 = FromRGB(225, 115, 52),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = _hasSecIcon and UDim2New(0, 18, 0, 18) or UDim2New(0, 0, 0, 0),
@@ -10103,7 +10178,7 @@ Library.Sections.Toggle = function(self, Data)
             function Toggle:GradientColorpicker(Data)
                 Data = Data or {}
                 local def = Data.Default or {}
-                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(195, 145, 85)
+                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(225, 115, 52)
                 local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
                 local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
                 local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
@@ -10391,7 +10466,7 @@ Library.Sections.Toggle = function(self, Data)
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(195, 145, 85)
+                    BackgroundColor3 = FromRGB(225, 115, 52)
                 })  Items["Accent"]:AddToTheme({BackgroundColor3 = "Accent"})
 
                 Instances:Create("UICorner", {
@@ -10638,7 +10713,7 @@ Library.Sections.Toggle = function(self, Data)
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(195, 145, 85)
+                    BackgroundColor3 = FromRGB(225, 115, 52)
                 })  Items["Accent"]:AddToTheme({BackgroundColor3 = "Accent"})
 
                 Instances:Create("UICorner", {
@@ -10995,7 +11070,7 @@ Library.Sections.Toggle = function(self, Data)
             function Label:GradientColorpicker(Data)
                 Data = Data or {}
                 local def = Data.Default or {}
-                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(195, 145, 85)
+                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(225, 115, 52)
                 local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
                 local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
                 local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
@@ -11257,7 +11332,7 @@ Library.Sections.Toggle = function(self, Data)
                 Interactive = (Data.Interactive ~= false),
                 AutoRotate = Data.AutoRotate or false,
                 ShowBox = (Data.ShowBox ~= false),
-                BoxColor = Data.BoxColor or (Library.Theme and Library.Theme.Accent) or FromRGB(195, 145, 85),
+                BoxColor = Data.BoxColor or (Library.Theme and Library.Theme.Accent) or FromRGB(225, 115, 52),
                 ShowHealth = (Data.ShowHealth ~= false),
                 Health = Data.Health or 100,
                 HealthColor = Data.HealthColor or FromRGB(0, 255, 0),
@@ -11559,7 +11634,7 @@ Library.Sections.Toggle = function(self, Data)
         Library.Sections.GradientColorpicker = function(self, Data)
             Data = Data or {}
             local def = Data.Default or {}
-            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(195, 145, 85)
+            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(225, 115, 52)
             local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
             local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
             local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
