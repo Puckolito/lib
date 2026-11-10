@@ -6080,19 +6080,6 @@ local Library do
                     BackgroundColor3 = FromRGB(22, 25, 29)
                 }):AddToTheme({BackgroundColor3 = "Inline"})
 
-                Instances:Create("Frame", {
-                    Parent = Items["Topbar"].Instance,
-                    Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    AnchorPoint = Vector2New(0, 1),
-                    BackgroundTransparency = 0.4000000059604645,
-                    Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 1),
-                    ZIndex = 2,
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(32, 36, 42)
-                }):AddToTheme({BackgroundColor3 = "Border"})
-
                 Instances:Create("UIGradient", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
@@ -6910,19 +6897,6 @@ local Library do
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(22, 25, 29)
                 }):AddToTheme({BackgroundColor3 = "Inline"})
-
-                Instances:Create("Frame", {
-                    Parent = Items["Topbar"].Instance,
-                    Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    AnchorPoint = Vector2New(0, 1),
-                    BackgroundTransparency = 0.4000000059604645,
-                    Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 1),
-                    ZIndex = 2,
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(32, 36, 42)
-                }):AddToTheme({BackgroundColor3 = "Border"})
 
                 Instances:Create("UIGradient", {
                     Parent = Items["Topbar"].Instance,
@@ -8038,19 +8012,6 @@ local Library do
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(22, 25, 29)
                 }):AddToTheme({BackgroundColor3 = "Inline"})
-
-                Instances:Create("Frame", {
-                    Parent = Items["Topbar"].Instance,
-                    Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    AnchorPoint = Vector2New(0, 1),
-                    BackgroundTransparency = 0.4,
-                    Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 1),
-                    ZIndex = 2,
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(32, 36, 42)
-                }):AddToTheme({BackgroundColor3 = "Border"})
 
                 Instances:Create("UIGradient", {
                     Parent = Items["Topbar"].Instance,
@@ -10065,19 +10026,6 @@ local Library do
                     Visible = _hasSecIcon,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Icon"]:AddToTheme({ImageColor3 = "Accent"})
-
-                Instances:Create("Frame", {
-                    Parent = Items["Topbar"].Instance,
-                    Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    AnchorPoint = Vector2New(0, 1),
-                    BackgroundTransparency = 0.4000000059604645,
-                    Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 1),
-                    ZIndex = 2,
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(32, 36, 42)
-                }):AddToTheme({BackgroundColor3 = "Border"})
 
                 Instances:Create("UIPadding", {
                     Parent = Items["Section"].Instance,
