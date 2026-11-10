@@ -1307,6 +1307,7 @@ local Library do
     local Workspace = game:GetService("Workspace")
     local SoundService = cloneref and cloneref(game:GetService("SoundService")) or game:GetService("SoundService")
     local CoreGui = cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
+    local GuiService = cloneref and cloneref(game:GetService("GuiService")) or game:GetService("GuiService")
 
     local LocalPlayer = Players.LocalPlayer
     if not LocalPlayer then
@@ -1324,6 +1325,15 @@ local Library do
             Camera = Workspace.CurrentCamera or Workspace:FindFirstChildOfClass("Camera")
         end
         return Camera
+    end
+    local function GetGuiInset()
+        local ok, inset = pcall(function()
+            return GuiService:GetGuiInset()
+        end)
+        if ok and inset then
+            return inset
+        end
+        return Vector2.new(0, 0)
     end
     local Mouse
     pcall(function() if LocalPlayer then Mouse = LocalPlayer:GetMouse() end end)
@@ -3268,12 +3278,26 @@ local Library do
                         local _actualCount = math.min(_optCount, _maxLimit)
                         local _calculatedHeight = (_actualCount * 25) + math.max(0, _actualCount - 1) * 3 + 8
 
-                        local realY = realDropdown.AbsolutePosition.Y
+                        local inset = GetGuiInset()
+                        local realX = realDropdown.AbsolutePosition.X + inset.X
+                        local realY = realDropdown.AbsolutePosition.Y + inset.Y
                         local realHeight = realDropdown.AbsoluteSize.Y
                         local dropDownY = realY + realHeight + 4
 
-                        Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
-                        Items["Holder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
+                        local cam = GetCamera()
+                        local vpHeight = (cam and cam.ViewportSize.Y > 200) and cam.ViewportSize.Y or 720
+                        local shouldDropUp = (Data and (Data.DropUp == true or Data.Direction == "Up"))
+                        if not shouldDropUp and (dropDownY + _calculatedHeight > vpHeight - 10) and (realY - _calculatedHeight > 10) then
+                            shouldDropUp = true
+                        end
+
+                        if shouldDropUp then
+                            Items["Holder"].Instance.AnchorPoint = Vector2New(0, 1)
+                            Items["Holder"].Instance.Position = UDim2New(0, realX, 0, realY - 4)
+                        else
+                            Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
+                            Items["Holder"].Instance.Position = UDim2New(0, realX, 0, dropDownY)
+                        end
                         Items["Holder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, _calculatedHeight)
                     end
 
@@ -3498,7 +3522,7 @@ local Library do
                     Active = false,
                     Selectable = false,
                     Size = UDim2New(0, 219, 0, 282),
-                    Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + 25),
+                    Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X + GetGuiInset().X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + GetGuiInset().Y + 25),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 100,
                     Visible = false,
@@ -4065,17 +4089,19 @@ local Library do
 
                         RenderStepped = RunService.RenderStepped:Connect(function()
                             local realDropdown = DropdownItems["RealDropdown"].Instance
-                            local realY = realDropdown.AbsolutePosition.Y
+                            local inset = GetGuiInset()
+                            local realX = realDropdown.AbsolutePosition.X + inset.X
+                            local realY = realDropdown.AbsolutePosition.Y + inset.Y
                             local realHeight = realDropdown.AbsoluteSize.Y
                             local dropDownY = realY + realHeight + 5
                             local shouldDropUp = (Data and (Data.DropUp == true or Data.Direction == "Up"))
 
                             if shouldDropUp then
                                 DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 1)
-                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realY - 4)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realX, 0, realY - 4)
                             else
                                 DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 0)
-                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realX, 0, dropDownY)
                             end
                             DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, 85)
                         end)
@@ -4247,7 +4273,8 @@ local Library do
                 Items["ColorpickerWindow"].Instance.Parent = Bool and Library.Holder.Instance or Library.UnusedHolder.Instance
 
                 if Bool then
-                    Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + 25)
+                    local inset = GetGuiInset()
+                    Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X + inset.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + inset.Y + 25)
 
                     for Index, Value in Library.OpenFrames do
                         if Value ~= Colorpicker and Value.SetOpen then
@@ -4597,7 +4624,7 @@ local Library do
                     Active = false,
                     Selectable = false,
                     Size = UDim2New(0, 226, 0, 310),
-                    Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + 25),
+                    Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X + GetGuiInset().X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + GetGuiInset().Y + 25),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 100,
                     Visible = false,
@@ -5015,11 +5042,12 @@ local Library do
                     Gradient.IsOpen = Bool
                     if Bool then
                         Items["ColorpickerWindow"].Instance.Parent = Library.Holder.Instance
+                        local inset = GetGuiInset()
                         local btnPos = Items["ColorpickerButton"].Instance.AbsolutePosition
                         local cam = GetCamera()
                         local vp = (cam and cam.ViewportSize.X > 200) and cam.ViewportSize or Vector2New(1280, 720)
-                        local targetX = math.clamp(btnPos.X - 230, 20, vp.X - 240)
-                        local targetY = math.clamp(btnPos.Y, 20, vp.Y - 320)
+                        local targetX = math.clamp(btnPos.X + inset.X - 230, 20, vp.X - 240)
+                        local targetY = math.clamp(btnPos.Y + inset.Y, 20, vp.Y - 320)
                         Items["ColorpickerWindow"].Instance.Position = UDim2New(0, targetX, 0, targetY)
                         Items["ColorpickerWindow"].Instance.Visible = true
                         SyncControls()
@@ -5099,7 +5127,7 @@ local Library do
                 Items["KeybindWindow"] = Instances:Create("Frame", {
                     Parent = Library.Holder.Instance,
                     Name = "\0",
-                    Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + 25),
+                    Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X + GetGuiInset().X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + GetGuiInset().Y + 25),
                     BorderColor3 = FromRGB(0, 0, 0),
                     Visible = false,
                     ZIndex = 200,
@@ -5474,17 +5502,19 @@ local Library do
 
                         RenderStepped = RunService.RenderStepped:Connect(function()
                             local realDropdown = DropdownItems["RealDropdown"].Instance
-                            local realY = realDropdown.AbsolutePosition.Y
+                            local inset = GetGuiInset()
+                            local realX = realDropdown.AbsolutePosition.X + inset.X
+                            local realY = realDropdown.AbsolutePosition.Y + inset.Y
                             local realHeight = realDropdown.AbsoluteSize.Y
                             local dropDownY = realY + realHeight + 5
                             local shouldDropUp = (Data and (Data.DropUp == true or Data.Direction == "Up"))
 
                             if shouldDropUp then
                                 DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 1)
-                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realY - 4)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realX, 0, realY - 4)
                             else
                                 DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 0)
-                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realX, 0, dropDownY)
                             end
                             DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, 85)
                         end)
@@ -5743,7 +5773,8 @@ local Library do
 
                 if Bool then
                     Items["KeybindWindow"].Instance.Visible = true
-                    Items["KeybindWindow"].Instance.Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + 25)
+                    local inset = GetGuiInset()
+                    Items["KeybindWindow"].Instance.Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X + inset.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + inset.Y + 25)
 
                     for Index, Value in pairs(Library.OpenFrames) do
                         if Value and Value ~= Keybind and Value.SetOpen and Value.Type == "Keybind" then
@@ -9569,17 +9600,19 @@ local Library do
 
                         RenderStepped = RunService.RenderStepped:Connect(function()
                             local realDropdown = DropdownItems["RealDropdown"].Instance
-                            local realY = realDropdown.AbsolutePosition.Y
+                            local inset = GetGuiInset()
+                            local realX = realDropdown.AbsolutePosition.X + inset.X
+                            local realY = realDropdown.AbsolutePosition.Y + inset.Y
                             local realHeight = realDropdown.AbsoluteSize.Y
                             local dropDownY = realY + realHeight + 5
                             local shouldDropUp = (Data and (Data.DropUp == true or Data.Direction == "Up"))
 
                             if shouldDropUp then
                                 DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 1)
-                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realY - 4)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realX, 0, realY - 4)
                             else
                                 DropdownItems["OptionHolder"].Instance.AnchorPoint = Vector2New(0, 0)
-                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
+                                DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, realX, 0, dropDownY)
                             end
                             DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, 85)
                         end)
