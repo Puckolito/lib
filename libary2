@@ -6068,18 +6068,6 @@ local Library do
                     CornerRadius = UDimNew(0, 5)
                 })
 
-                Instances:Create("Frame", {
-                    Parent = Items["Topbar"].Instance,
-                    Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    AnchorPoint = Vector2New(0, 1),
-                    Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 3),
-                    ZIndex = 2,
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(22, 25, 29)
-                }):AddToTheme({BackgroundColor3 = "Inline"})
-
                 Instances:Create("UIGradient", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
@@ -6885,18 +6873,6 @@ local Library do
                     Name = "\0",
                     CornerRadius = UDimNew(0, 5)
                 })
-
-                Instances:Create("Frame", {
-                    Parent = Items["Topbar"].Instance,
-                    Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    AnchorPoint = Vector2New(0, 1),
-                    Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 3),
-                    ZIndex = 2,
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(22, 25, 29)
-                }):AddToTheme({BackgroundColor3 = "Inline"})
 
                 Instances:Create("UIGradient", {
                     Parent = Items["Topbar"].Instance,
@@ -8000,18 +7976,6 @@ local Library do
                     Name = "\0",
                     CornerRadius = UDimNew(0, 5)
                 })
-
-                Instances:Create("Frame", {
-                    Parent = Items["Topbar"].Instance,
-                    Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    AnchorPoint = Vector2New(0, 1),
-                    Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 3),
-                    ZIndex = 2,
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(22, 25, 29)
-                }):AddToTheme({BackgroundColor3 = "Inline"})
 
                 Instances:Create("UIGradient", {
                     Parent = Items["Topbar"].Instance,
@@ -9976,18 +9940,6 @@ local Library do
                     return RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, Library.Theme["Dark Gradient"])}
                 end})
 
-                Instances:Create("Frame", {
-                    Parent = Items["Topbar"].Instance,
-                    Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    AnchorPoint = Vector2New(0, 1),
-                    Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 3),
-                    ZIndex = 2,
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(22, 25, 29)
-                }):AddToTheme({BackgroundColor3 = "Inline"})
-
                 Items["Title"] = Instances:Create("TextLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
@@ -11949,6 +11901,53 @@ local httpService = game:GetService("HttpService")
 
 local SaveManager = {} do
     SaveManager.Folder = "MerquryHub"
+    SaveManager.Ignore = {}
+    SaveManager.Options = {}
+    SaveManager.Library = nil
+
+    local function GetOptionObj(idx)
+        if SaveManager.Options and SaveManager.Options[idx] then
+            return SaveManager.Options[idx]
+        elseif getgenv().Options and getgenv().Options[idx] then
+            return getgenv().Options[idx]
+        elseif SaveManager.Library and SaveManager.Library.Options and SaveManager.Library.Options[idx] then
+            return SaveManager.Library.Options[idx]
+        end
+        return nil
+    end
+
+    local TypeAliases = {
+        toggle = "Toggle", Toggle = "Toggle",
+        slider = "Slider", Slider = "Slider",
+        rangeslider = "RangeSlider", RangeSlider = "RangeSlider", minmaxslider = "RangeSlider", MinMaxSlider = "RangeSlider",
+        dropdown = "Dropdown", Dropdown = "Dropdown",
+        colorpicker = "Colorpicker", Colorpicker = "Colorpicker", ColorPicker = "Colorpicker", color = "Colorpicker",
+        gradientcolorpicker = "GradientColorpicker", GradientColorpicker = "GradientColorpicker",
+        keybind = "Keybind", Keybind = "Keybind", KeyBind = "Keybind", bind = "Keybind",
+        input = "Input", Input = "Input", textbox = "Input", Textbox = "Input", TextBox = "Input",
+    }
+
+    local function ResolveParser(typeName)
+        if not typeName or type(typeName) ~= "string" then return nil end
+        local canonical = TypeAliases[typeName]
+        if canonical then return SaveManager.Parser[canonical] end
+        local p = SaveManager.Parser[typeName]
+        if p then return p end
+        local cap = typeName:sub(1,1):upper() .. typeName:sub(2):lower()
+        return SaveManager.Parser[cap]
+    end
+
+    SaveManager.Parser = {
+        Toggle = {
+            Save = function(idx, object)
+                return { type = "Toggle", idx = idx, value = object.Value }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local val = (data.value == true or data.value == "true")
+                if obj and obj.Set then
+                    obj:Set(val)
+                elseif SaveManager.Lib
     SaveManager.Ignore = {}
     SaveManager.Options = {}
     SaveManager.Library = nil
