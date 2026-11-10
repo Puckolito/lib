@@ -1789,14 +1789,6 @@ local Library do
                 BackgroundColor3 = FromRGB(16, 18, 21)
             })  Newtooltip:AddToTheme({BackgroundColor3 = "Background"})
 
-            local UIStroke = Instances:Create("UIStroke", {
-                Parent = Newtooltip.Instance,
-                Name = "\0",
-                Color = FromRGB(32, 36, 42),
-                Transparency = 1,
-                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-            })  UIStroke:AddToTheme({Color = "Border"})
-
             Instances:Create("UIPadding", {
                 Parent = Newtooltip.Instance,
                 Name = "\0",
@@ -1837,7 +1829,6 @@ local Library do
 
                 Newtooltip:Tween(nil, {BackgroundTransparency = 0.15})
                 TooltipText:Tween(nil, {TextTransparency = 0})
-                UIStroke:Tween(nil, {Transparency = 0.4})
 
                 RenderStepped = RunService.RenderStepped:Connect(function()
                     MouseLocation = UserInputService:GetMouseLocation()
@@ -1848,7 +1839,6 @@ local Library do
             Library:Connect(Gui.MouseLeave, function()
                 Newtooltip:Tween(nil, {BackgroundTransparency = 1})
                 TooltipText:Tween(nil, {TextTransparency = 1})
-                UIStroke:Tween(nil, {Transparency = 1})
 
                 if RenderStepped then
                     RenderStepped:Disconnect()
@@ -2987,14 +2977,6 @@ local Library do
                     CornerRadius = UDimNew(0, 5)
                 })
 
-                Instances:Create("UIStroke", {
-                    Parent = Items["Holder"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
-
                 Instances:Create("UIListLayout", {
                     Parent = Items["Holder"].Instance,
                     Name = "\0",
@@ -3108,7 +3090,7 @@ local Library do
                     BorderSizePixel = 0,
                     Size = UDim2New(1, -5, 0, 25),
                     LayoutOrder = _currentOptCount + 1,
-                    ZIndex = 5,
+                    ZIndex = 51,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(16, 18, 21)
                 })  OptionButton:AddToTheme({BackgroundColor3 = "Background"})
@@ -3124,7 +3106,7 @@ local Library do
                     FontFace = Library.Font,
                     TextTransparency = 0.5,
                     AnchorPoint = Vector2New(0, 0.5),
-                    ZIndex = 5,
+                    ZIndex = 52,
                     TextSize = 14,
                     Size = UDim2New(0, 0, 0, 15),
                     TextColor3 = FromRGB(255, 255, 255),
@@ -3174,7 +3156,10 @@ local Library do
                 end
 
                 function OptionData:Set()
-                    if not Data.Multi and OptionData.Selected then return end
+                    if not Data.Multi and OptionData.Selected then
+                        Dropdown:SetOpen(false)
+                        return
+                    end
                     OptionData.Selected = not OptionData.Selected
 
                     if Data.Multi then
@@ -3215,6 +3200,8 @@ local Library do
                             OptionData:Toggle("Inactive")
                             Items["Value"].Instance.Text = "--"
                         end
+
+                        Dropdown:SetOpen(false)
                     end
 
                     if Data.Callback then
@@ -3262,7 +3249,8 @@ local Library do
 
                 if Bool then
                     Items["Holder"].Instance.Visible = true
-                    Items["Holder"].Instance.ZIndex = 100
+                    Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
+                    Items["Holder"].Instance.ZIndex = 50
 
                     RenderStepped = RunService.RenderStepped:Connect(function()
                         local realDropdown = Items["RealDropdown"].Instance
@@ -3273,18 +3261,8 @@ local Library do
                         local _actualCount = math.min(_optCount, _maxLimit)
                         local _calculatedHeight = (_actualCount * 25) + math.max(0, _actualCount - 1) * 3 + 8
 
-                        local realY = realDropdown.AbsolutePosition.Y
-                        local realHeight = realDropdown.AbsoluteSize.Y
-                        local dropDownY = realY + realHeight + 4
-                        local shouldDropUp = (Data and (Data.DropUp == true or Data.Direction == "Up"))
-
-                        if shouldDropUp then
-                            Items["Holder"].Instance.AnchorPoint = Vector2New(0, 1)
-                            Items["Holder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realY - 4)
-                        else
-                            Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
-                            Items["Holder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
-                        end
+                        Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
+                        Items["Holder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realDropdown.AbsolutePosition.Y + 28)
                         Items["Holder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, _calculatedHeight)
                     end)
 
@@ -3324,8 +3302,6 @@ local Library do
                         continue
                     end
 
-                    Value.ZIndex = Bool and 50 or (Value.ZIndex > 50 and Value.ZIndex - 40 or Value.ZIndex)
-
                     if type(TransparencyProperty) == "table" then
                         for _, Property in TransparencyProperty do
                             NewTween = Tween:FadeItem(Value, Property, Bool, Data.Window.FadeSpeed)
@@ -3355,7 +3331,7 @@ local Library do
 
             Library:Connect(UserInputService.InputBegan, function(Input)
                 if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    if Library:IsMouseOverFrame(Items["Holder"]) then
+                    if Library:IsMouseOverFrame(Items["Holder"]) or Library:IsMouseOverFrame(Items["RealDropdown"]) then
                         return
                     end
 
@@ -3537,14 +3513,6 @@ local Library do
                 Items["CloseButton"]:Connect("MouseButton1Down", function()
                     Colorpicker:SetOpen(false)
                 end)
-
-                Instances:Create("UIStroke", {
-                    Parent = Items["ColorpickerWindow"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4000000059604645,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
 
                 Instances:Create("UICorner", {
                     Parent = Items["ColorpickerWindow"].Instance,
@@ -3898,14 +3866,6 @@ local Library do
                     }):AddToTheme({Color = function()
                         return RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, Library.Theme["Dark Gradient"])}
                     end})
-
-                    Instances:Create("UIStroke", {
-                        Parent = DropdownItems["OptionHolder"].Instance,
-                        Name = "\0",
-                        Color = FromRGB(32, 36, 42),
-                        Transparency = 0.4000000059604645,
-                        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                    }):AddToTheme({Color = "Border"})
 
                     Instances:Create("UICorner", {
                         Parent = DropdownItems["OptionHolder"].Instance,
@@ -4591,14 +4551,6 @@ local Library do
                     Name = "\0",
                     CornerRadius = UDimNew(0, 4)
                 })
-                local BtnStroke = Instances:Create("UIStroke", {
-                    Parent = Items["ColorpickerButton"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(42, 46, 52),
-                    Thickness = 1,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                })
-                BtnStroke:AddToTheme({Color = "Border"})
 
                 Items["Inline"] = Instances:Create("Frame", {
                     Parent = Items["ColorpickerButton"].Instance,
@@ -4660,14 +4612,6 @@ local Library do
                 Items["CloseButton"]:Connect("MouseButton1Down", function()
                     Gradient:SetOpen(false)
                 end)
-
-                Instances:Create("UIStroke", {
-                    Parent = Items["ColorpickerWindow"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
 
                 Instances:Create("UICorner", {
                     Parent = Items["ColorpickerWindow"].Instance,
@@ -5156,14 +5100,6 @@ local Library do
                     BackgroundColor3 = FromRGB(16, 18, 21)
                 })  Items["KeybindWindow"]:AddToTheme({BackgroundColor3 = "Background"})
 
-                Instances:Create("UIStroke", {
-                    Parent = Items["KeybindWindow"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4000000059604645,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
-
                 Instances:Create("UICorner", {
                     Parent = Items["KeybindWindow"].Instance,
                     Name = "\0",
@@ -5295,14 +5231,6 @@ local Library do
                     }):AddToTheme({Color = function()
                         return RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, Library.Theme["Dark Gradient"])}
                     end})
-
-                    Instances:Create("UIStroke", {
-                        Parent = DropdownItems["OptionHolder"].Instance,
-                        Name = "\0",
-                        Color = FromRGB(32, 36, 42),
-                        Transparency = 0.4000000059604645,
-                        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                    }):AddToTheme({Color = "Border"})
 
                     Instances:Create("UICorner", {
                         Parent = DropdownItems["OptionHolder"].Instance,
@@ -6094,14 +6022,6 @@ local Library do
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(22, 25, 29)
                 })  Items["Topbar"]:AddToTheme({BackgroundColor3 = "Inline"})
-
-                Instances:Create("UIStroke", {
-                    Parent = Items["EspPreview"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4000000059604645,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
 
                 Instances:Create("UICorner", {
                     Parent = Items["Topbar"].Instance,
@@ -6924,14 +6844,6 @@ local Library do
                     CornerRadius = UDimNew(0, 5)
                 })
 
-                Instances:Create("UIStroke", {
-                    Parent = Items["Chat_System"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4000000059604645,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
-
                 Items["Topbar"] = Instances:Create("Frame", {
                     Parent = Items["Chat_System"].Instance,
                     Name = "\0",
@@ -7489,14 +7401,6 @@ local Library do
                     AutomaticSize = Enum.AutomaticSize.XY,
                     BackgroundColor3 = FromRGB(16, 18, 21)
                 })  Items["Notification"]:AddToTheme({BackgroundColor3 = "Background"})
-
-                Instances:Create("UIStroke", {
-                    Parent = Items["Notification"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4000000059604645,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
 
                 Instances:Create("UICorner", {
                     Parent = Items["Notification"].Instance,
@@ -8185,14 +8089,6 @@ local Library do
                     CornerRadius = UDimNew(0, 5)
                 })
 
-                Instances:Create("UIStroke", {
-                    Parent = Items["Version"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4000000059604645,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
-
                 Instances:Create("UIPadding", {
                     Parent = Items["Title"].Instance,
                     Name = "\0",
@@ -8247,14 +8143,6 @@ local Library do
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["UnMinimizeButton"]:AddToTheme({ImageColor3 = "Image"})
 
-                Instances:Create("UIStroke", {
-                    Parent = Items["MainFrame"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4000000059604645,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
-
                 Items["Content"] = Instances:Create("Frame", {
                     Parent = Items["MainFrame"].Instance,
                     Name = "\0",
@@ -8294,14 +8182,6 @@ local Library do
                     Name = "\0",
                     CornerRadius = UDimNew(0, 5)
                 })
-
-                Instances:Create("UIStroke", {
-                    Parent = Items["Search"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    Transparency = 0.4000000059604645,
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})
 
                 Items["SearchIcon"] = Instances:Create("ImageLabel", {
                     Parent = Items["Search"].Instance,
@@ -9426,14 +9306,6 @@ local Library do
                     }):AddToTheme({Color = function()
                         return RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, Library.Theme["Dark Gradient"])}
                     end})
-
-                    Instances:Create("UIStroke", {
-                        Parent = DropdownItems["OptionHolder"].Instance,
-                        Name = "\0",
-                        Color = FromRGB(32, 36, 42),
-                        Transparency = 0.4000000059604645,
-                        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                    }):AddToTheme({Color = "Border"})
 
                     Instances:Create("UICorner", {
                         Parent = DropdownItems["OptionHolder"].Instance,
@@ -11460,12 +11332,6 @@ Library.Sections.Toggle = function(self, Data)
                     Name = "\0",
                     CornerRadius = UDimNew(0, 5)
                 })
-                local Stroke = Instances:Create("UIStroke", {
-                    Parent = Items["ViewportFrame"].Instance,
-                    Name = "\0",
-                    Color = FromRGB(32, 36, 42),
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                })  Stroke:AddToTheme({Color = "Border"})
 
                 local ViewportCamera = InstanceNew("Camera")
                 ViewportCamera.CameraType = Enum.CameraType.Scriptable
