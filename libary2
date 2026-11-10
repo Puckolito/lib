@@ -10,16 +10,16 @@ end
 local cloneref = cloneref or function(o) return o end
 local CoreGui = cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
 
-if getgenv().Library then
-    getgenv().Library:Unload()
+if getgenv().Library and getgenv().Library.Unload then
+    pcall(function() getgenv().Library:Unload() end)
 end
 
 local ESPFonts = { }
 local SelectedESPFont
 
 local Options, MiscOptions do
-    if getgenv().Esp then
-        getgenv().Esp.Unload()
+    if getgenv().Esp and getgenv().Esp.Unload then
+        pcall(function() getgenv().Esp.Unload() end)
     end
 
     local Workspace = cloneref(game:GetService("Workspace"))
@@ -4589,7 +4589,6 @@ local Library do
                     Color = ColorSequence.new(Gradient.Color1, Gradient.Color2)
                 })
 
-                -- Picker Popup Window
                 Items["ColorpickerWindow"] = Instances:Create("TextButton", {
                     Parent = Library.UnusedHolder.Instance,
                     Text = "",
@@ -4634,7 +4633,6 @@ local Library do
                     CornerRadius = UDimNew(0, 5)
                 })
 
-                -- Stop selection pills: [ Color 1 | Color 2 ]
                 local PillHolder = Instances:Create("Frame", {
                     Parent = Items["ColorpickerWindow"].Instance,
                     Name = "\0",
@@ -4679,7 +4677,6 @@ local Library do
                 local Stop2Stroke = Instances:Create("UIStroke", { Parent = Items["Stop2Btn"].Instance, Color = FromRGB(35, 40, 48), Thickness = 1 })
                 Stop2Stroke:AddToTheme({Color = "Border"})
 
-                -- Live Gradient Preview bar
                 local PreviewBar = Instances:Create("Frame", {
                     Parent = Items["ColorpickerWindow"].Instance,
                     Name = "\0",
@@ -4695,7 +4692,6 @@ local Library do
                     Color = ColorSequence.new(Gradient.Color1, Gradient.Color2)
                 })
 
-                -- 2D Saturation / Value Palette
                 Items["Palette"] = Instances:Create("TextButton", {
                     Parent = Items["ColorpickerWindow"].Instance,
                     Name = "\0",
@@ -4742,7 +4738,6 @@ local Library do
                 Instances:Create("UICorner", { Parent = Items["PaletteDragger"].Instance, CornerRadius = UDimNew(1, 0) })
                 Instances:Create("UIStroke", { Parent = Items["PaletteDragger"].Instance, Thickness = 1.2 })
 
-                -- Hue Slider
                 Items["Hue"] = Instances:Create("TextButton", {
                     Parent = Items["ColorpickerWindow"].Instance,
                     Name = "\0",
@@ -4781,7 +4776,6 @@ local Library do
                 Instances:Create("UICorner", { Parent = Items["HueDragger"].Instance, CornerRadius = UDimNew(1, 0) })
                 Instances:Create("UIStroke", { Parent = Items["HueDragger"].Instance, Thickness = 1 })
 
-                -- Alpha Slider
                 Items["Alpha"] = Instances:Create("TextButton", {
                     Parent = Items["ColorpickerWindow"].Instance,
                     Name = "\0",
@@ -4808,7 +4802,6 @@ local Library do
                 Instances:Create("UICorner", { Parent = Items["AlphaDragger"].Instance, CornerRadius = UDimNew(1, 0) })
                 Instances:Create("UIStroke", { Parent = Items["AlphaDragger"].Instance, Thickness = 1 })
 
-                -- Hex Input Textbox
                 local HexBox = Instances:Create("TextBox", {
                     Parent = Items["ColorpickerWindow"].Instance,
                     Name = "\0",
@@ -11947,7 +11940,332 @@ local Library do
             })  TextLabel:AddToTheme({TextColor3 = "Text"})
 
             if Data.Tooltip then
-                Containe
+                Container:Tooltip(Data.Tooltip)
+            end
+
+            local NewGradient, GradItems = Components.GradientColorpicker({
+                Window = self.Window,
+                Page = self.Page,
+                Parent = Container,
+                Name = Data.Name or "Gradient Color",
+                Flag = Data.Flag or Library:NextFlag(),
+                Color1 = c1,
+                Color2 = c2,
+                Alpha1 = a1,
+                Alpha2 = a2,
+                Callback = Data.Callback,
+                Count = 0
+            })
+
+            return NewGradient
+        end
+    end
+end
+
+getgenv().Library = Library
+
+local httpService = game:GetService("HttpService")
+
+local SaveManager = {} do
+    SaveManager.Folder = "MerquryHub"
+    SaveManager.Ignore = {}
+    SaveManager.Options = {}
+    SaveManager.Library = nil
+
+    local function GetOptionObj(idx)
+        if SaveManager.Options and SaveManager.Options[idx] then
+            return SaveManager.Options[idx]
+        elseif getgenv().Options and getgenv().Options[idx] then
+            return getgenv().Options[idx]
+        elseif SaveManager.Library and SaveManager.Library.Options and SaveManager.Library.Options[idx] then
+            return SaveManager.Library.Options[idx]
+        end
+        return nil
+    end
+
+    local TypeAliases = {
+        toggle = "Toggle", Toggle = "Toggle",
+        slider = "Slider", Slider = "Slider",
+        rangeslider = "RangeSlider", RangeSlider = "RangeSlider", minmaxslider = "RangeSlider", MinMaxSlider = "RangeSlider",
+        dropdown = "Dropdown", Dropdown = "Dropdown",
+        colorpicker = "Colorpicker", Colorpicker = "Colorpicker", ColorPicker = "Colorpicker", color = "Colorpicker",
+        gradientcolorpicker = "GradientColorpicker", GradientColorpicker = "GradientColorpicker",
+        keybind = "Keybind", Keybind = "Keybind", KeyBind = "Keybind", bind = "Keybind",
+        input = "Input", Input = "Input", textbox = "Input", Textbox = "Input", TextBox = "Input",
+    }
+
+    local function ResolveParser(typeName)
+        if not typeName or type(typeName) ~= "string" then return nil end
+        local canonical = TypeAliases[typeName]
+        if canonical then return SaveManager.Parser[canonical] end
+        local p = SaveManager.Parser[typeName]
+        if p then return p end
+        local cap = typeName:sub(1,1):upper() .. typeName:sub(2):lower()
+        return SaveManager.Parser[cap]
+    end
+
+    SaveManager.Parser = {
+        Toggle = {
+            Save = function(idx, object)
+                return { type = "Toggle", idx = idx, value = object.Value }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local val = (data.value == true or data.value == "true")
+                if obj and obj.Set then
+                    obj:Set(val)
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](val)
+                end
+            end,
+        },
+        Slider = {
+            Save = function(idx, object)
+                return { type = "Slider", idx = idx, value = object.Value }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local v = tonumber(data.value)
+                if v and obj and obj.Set then
+                    obj:Set(v)
+                elseif v and SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](v)
+                end
+            end,
+        },
+        RangeSlider = {
+            Save = function(idx, object)
+                local v = object.Value or {}
+                return { type = "RangeSlider", idx = idx, value = { Min = v.Min or 0, Max = v.Max or 100 } }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local v = data.value or {}
+                local low = tonumber(v.Min or v[1])
+                local high = tonumber(v.Max or v[2])
+                if low and high and obj and obj.Set then
+                    obj:Set(low, high)
+                elseif low and high and SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](low, high)
+                end
+            end,
+        },
+        Dropdown = {
+            Save = function(idx, object)
+                return { type = "Dropdown", idx = idx, value = object.Value, multi = object.Multi or false }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local val = data.value
+                if obj then
+                    if obj.Multi and type(val) ~= "table" then
+                        val = { val }
+                    elseif not obj.Multi and type(val) == "table" then
+                        val = val[1]
+                    end
+                    if obj.Set then
+                        obj:Set(val)
+                    end
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](val)
+                end
+            end,
+        },
+        Colorpicker = {
+            Save = function(idx, object)
+                local col
+                if object.HexValue then
+                    return { type = "Colorpicker", idx = idx, value = object.HexValue, transparency = object.Alpha or 1 }
+                end
+                local flagData = Library and Library.Flags and Library.Flags[idx]
+                if flagData and type(flagData) == "table" and flagData.Color then
+                    return { type = "Colorpicker", idx = idx, value = flagData.Color, transparency = flagData.Alpha or object.Alpha or 1 }
+                end
+                col = object.Color or (type(object.Value) == "table" and object.Value.Color3) or nil
+                if not col and object.Hue and object.Saturation and object.Brightness then
+                    col = Color3.fromHSV(object.Hue, object.Saturation, object.Brightness)
+                end
+                col = col or Color3.new(1, 1, 1)
+                local alpha = object.Alpha or (type(object.Value) == "table" and object.Value.Alpha) or 1
+                local hex = typeof(col) == "Color3" and col:ToHex() or "ffffff"
+                return { type = "Colorpicker", idx = idx, value = hex, transparency = alpha }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local hexVal = tostring(data.value or "ffffff")
+                if hexVal:sub(1, 1) == "#" then hexVal = hexVal:sub(2) end
+                local ok, color = pcall(Color3.fromHex, hexVal)
+                if not ok then color = Color3.new(1, 1, 1) end
+                local alpha = tonumber(data.transparency or data.alpha) or 1
+                if obj and obj.Set then
+                    obj:Set(color, alpha)
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](color, alpha)
+                end
+            end,
+        },
+        GradientColorpicker = {
+            Save = function(idx, object)
+                local c1 = object.Color1 or Color3.new(1, 1, 1)
+                local c2 = object.Color2 or Color3.new(1, 1, 1)
+                local a1 = tonumber(object.Alpha1) or 1
+                local a2 = tonumber(object.Alpha2) or 1
+                return {
+                    type = "GradientColorpicker",
+                    idx = idx,
+                    color1 = typeof(c1) == "Color3" and c1:ToHex() or "ffffff",
+                    color2 = typeof(c2) == "Color3" and c2:ToHex() or "ffffff",
+                    alpha1 = a1,
+                    alpha2 = a2
+                }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local h1 = tostring(data.color1 or "ffffff"):gsub("^#", "")
+                local h2 = tostring(data.color2 or "ffffff"):gsub("^#", "")
+                local ok1, c1 = pcall(Color3.fromHex, h1)
+                local ok2, c2 = pcall(Color3.fromHex, h2)
+                c1 = ok1 and c1 or Color3.new(1, 1, 1)
+                c2 = ok2 and c2 or Color3.new(1, 1, 1)
+                local a1 = tonumber(data.alpha1) or 1
+                local a2 = tonumber(data.alpha2) or 1
+                if obj and obj.Set then
+                    obj:Set(c1, c2, a1, a2)
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx]({ Color1 = c1, Color2 = c2, Alpha1 = a1, Alpha2 = a2 })
+                end
+            end
+        },
+        Keybind = {
+            Save = function(idx, object)
+                return { type = "Keybind", idx = idx, mode = object.Mode, key = object.Key and object.Key.Name or "None" }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                if obj and obj.Set then
+                    pcall(function()
+                        local key = Enum.KeyCode[data.key] or Enum.UserInputType[data.key] or data.key
+                        obj:Set(key, data.mode)
+                    end)
+                end
+            end,
+        },
+        Input = {
+            Save = function(idx, object)
+                return { type = "Input", idx = idx, text = object.Value }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                if obj and obj.Set then
+                    obj:Set(data.text or "")
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](data.text or "")
+                end
+            end,
+        },
+    }
+
+    function SaveManager:SetIgnoreIndexes(list)
+        for _, key in next, list do
+            self.Ignore[key] = true
+        end
+    end
+
+    function SaveManager:SetFolder(folder)
+        self.Folder = folder
+        self:BuildFolderTree()
+    end
+
+    function SaveManager:Save(name)
+        if not name or name == "" then
+            return false, "no config file is selected"
+        end
+
+        local cleanName = name
+        if cleanName:sub(-5):lower() == ".json" then
+            cleanName = cleanName:sub(1, -6)
+        end
+
+        local fullPath = self.Folder .. "/settings/" .. cleanName .. ".json"
+        local data = { objects = {} }
+
+        local optionsSource = self.Options
+        if not optionsSource or next(optionsSource) == nil then
+            optionsSource = getgenv().Options or (self.Library and self.Library.Options) or {}
+        end
+
+        for idx, _ in pairs(optionsSource) do
+            if type(idx) == "string" then
+                if idx:match("ModeDropdown$") or idx:match("keybindToggle$") or idx:match("AnimationDropdown$") then
+                    self.Ignore[idx] = true
+                end
+            end
+        end
+
+        for idx, option in pairs(optionsSource) do
+            if self.Ignore[idx] then continue end
+            local optType = option.Type
+            if not optType then
+                if option.Key ~= nil or option.Toggled ~= nil or option.Picking ~= nil then
+                    optType = "Keybind"
+                elseif option.HexValue ~= nil or (option.Hue ~= nil and option.Saturation ~= nil) then
+                    optType = "Colorpicker"
+                elseif type(option.Value) == "boolean" then
+                    optType = "Toggle"
+                elseif type(option.Value) == "table" and (option.Value.Min ~= nil and option.Value.Max ~= nil) then
+                    optType = "RangeSlider"
+                elseif type(option.Value) == "number" or option.Min ~= nil or option.Max ~= nil then
+                    optType = "Slider"
+                elseif option.Options ~= nil or option.Items ~= nil then
+                    optType = "Dropdown"
+                elseif type(option.Value) == "string" then
+                    optType = "Input"
+                end
+            end
+            if optType then
+                local parser = ResolveParser(optType)
+                if parser and parser.Save then
+                    local ok, entry = pcall(parser.Save, idx, option)
+                    if ok and entry then
+                        table.insert(data.objects, entry)
+                    end
+                end
+            end
+        end
+
+        local success, encoded = pcall(httpService.JSONEncode, httpService, data)
+        if not success then
+            return false, "failed to encode data"
+        end
+
+        if writefile then
+            pcall(writefile, fullPath, encoded)
+        end
+        return true
+    end
+
+    function SaveManager:Load(name)
+        if not name or name == "" then
+            return false, "no config file is selected"
+        end
+
+        local cleanName = name
+        if cleanName:sub(-5):lower() == ".json" then
+            cleanName = cleanName:sub(1, -6)
+        end
+
+        local file = self.Folder .. "/settings/" .. cleanName .. ".json"
+        if not isfile or not isfile(file) then return false, "invalid file" end
+
+        local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
+        if not success then return false, "decode error" end
+
+        if decoded and decoded.objects then
+            local loadOrder = { Toggle = 1, Slider = 2, RangeSlider = 2, Dropdown = 3, Colorpicker = 4, GradientColorpicker = 4, Keybind = 5, Input = 6 }
+            local sorted = {}
+            for _, option in next, decoded.objects do
+                table.insert(sorted, option)
+            end
             table.sort(sorted, function(a, b)
                 local aType = TypeAliases[a.type or ""] or a.type or ""
                 local bType = TypeAliases[b.type or ""] or b.type or ""
@@ -12087,6 +12405,7 @@ local Library do
     end
 
     function SaveManager:BuildFolderTree()
+        if not isfolder or not makefolder then return end
         local paths = {
             self.Folder,
             self.Folder .. "/settings"
@@ -12095,12 +12414,13 @@ local Library do
         for i = 1, #paths do
             local str = paths[i]
             if not isfolder(str) then
-                makefolder(str)
+                pcall(makefolder, str)
             end
         end
     end
 
     function SaveManager:RefreshConfigList()
+        if not isfolder or not listfiles then return {} end
         if not isfolder(self.Folder .. "/settings") then
             self:BuildFolderTree()
         end
@@ -12287,7 +12607,7 @@ local Library do
         end
     end
 
-    SaveManager:BuildFolderTree()
+    pcall(function() SaveManager:BuildFolderTree() end)
 end
 
 getgenv().SaveManager = SaveManager
