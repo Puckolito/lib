@@ -3254,7 +3254,7 @@ local Library do
                     Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
                     Items["Holder"].Instance.ZIndex = 50
 
-                    RenderStepped = RunService.RenderStepped:Connect(function()
+                    local function UpdateDropdownPos()
                         local realDropdown = Items["RealDropdown"].Instance
                         local _optCount = 0
                         for _ in pairs(Dropdown.Options) do _optCount = _optCount + 1 end
@@ -3263,10 +3263,17 @@ local Library do
                         local _actualCount = math.min(_optCount, _maxLimit)
                         local _calculatedHeight = (_actualCount * 25) + math.max(0, _actualCount - 1) * 3 + 8
 
+                        local realY = realDropdown.AbsolutePosition.Y
+                        local realHeight = realDropdown.AbsoluteSize.Y
+                        local dropDownY = realY + realHeight + 4
+
                         Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
-                        Items["Holder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, realDropdown.AbsolutePosition.Y + 28)
+                        Items["Holder"].Instance.Position = UDim2New(0, realDropdown.AbsolutePosition.X, 0, dropDownY)
                         Items["Holder"].Instance.Size = UDim2New(0, realDropdown.AbsoluteSize.X, 0, _calculatedHeight)
-                    end)
+                    end
+
+                    UpdateDropdownPos()
+                    RenderStepped = RunService.RenderStepped:Connect(UpdateDropdownPos)
 
                     for Index, Value in Library.OpenFrames do
                         if Value.Name ~= Data.Name then
@@ -3277,6 +3284,7 @@ local Library do
                     local _ddKey = Data.Flag or Data.Name or "Dropdown"
                     Library.OpenFrames[_ddKey] = Dropdown
                 else
+                    Items["Holder"].Instance.Visible = false
                     local _ddKey = Data.Flag or Data.Name or "Dropdown"
                     if Library.OpenFrames[_ddKey] then
                         Library.OpenFrames[_ddKey] = nil
@@ -7877,6 +7885,14 @@ local Library do
                     CornerRadius = UDimNew(0, 5)
                 })
 
+                local MainFrameStroke = Instances:Create("UIStroke", {
+                    Parent = Items["MainFrame"].Instance,
+                    Name = "\0",
+                    Color = Library.Theme.Border,
+                    Thickness = 1,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                })  MainFrameStroke:AddToTheme({Color = "Border"})
+
                 Items["Pages"] = Instances:Create("Frame", {
                     Parent = Items["MainFrame"].Instance,
                     Name = "\0",
@@ -8184,6 +8200,14 @@ local Library do
                     Name = "\0",
                     CornerRadius = UDimNew(0, 5)
                 })
+
+                local SearchStroke = Instances:Create("UIStroke", {
+                    Parent = Items["Search"].Instance,
+                    Name = "\0",
+                    Color = Library.Theme.Border,
+                    Thickness = 1,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                })  SearchStroke:AddToTheme({Color = "Border"})
 
                 Items["SearchIcon"] = Instances:Create("ImageLabel", {
                     Parent = Items["Search"].Instance,
@@ -11993,14 +12017,7 @@ local SaveManager = {} do
         if not isfile(file) then return false, "invalid file" end
 
         local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
-        if not success then return false, "decode error" end
-
-        if decoded and decoded.objects then
-            local loadOrder = { Toggle = 1, Slider = 2, RangeSlider = 2, Dropdown = 3, Colorpicker = 4, GradientColorpicker = 4, Keybind = 5, Input = 6 }
-            local sorted = {}
-            for _, option in next, decoded.objects do
-                table.insert(sorted, option)
-            end
+        if not success then retu
             table.sort(sorted, function(a, b)
                 local aType = TypeAliases[a.type or ""] or a.type or ""
                 local bType = TypeAliases[b.type or ""] or b.type or ""
