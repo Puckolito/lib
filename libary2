@@ -11947,5 +11947,487 @@ local SaveManager = {} do
                 local val = (data.value == true or data.value == "true")
                 if obj and obj.Set then
                     obj:Set(val)
-                elseif SaveManager.Lib
-... [truncated for diff preview]
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](val)
+                end
+            end,
+        },
+        Slider = {
+            Save = function(idx, object)
+                return { type = "Slider", idx = idx, value = object.Value }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local v = tonumber(data.value)
+                if v and obj and obj.Set then
+                    obj:Set(v)
+                elseif v and SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](v)
+                end
+            end,
+        },
+        RangeSlider = {
+            Save = function(idx, object)
+                local v = object.Value or {}
+                return {
+                    type = "RangeSlider",
+                    idx = idx,
+                    min = tonumber(v.Min or v[1]) or 0,
+                    max = tonumber(v.Max or v[2]) or 100
+                }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local minV = tonumber(data.min or (type(data.value) == "table" and (data.value.Min or data.value[1]))) or 0
+                local maxV = tonumber(data.max or (type(data.value) == "table" and (data.value.Max or data.value[2]))) or 100
+                if obj and obj.Set then
+                    obj:Set(minV, maxV)
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx]({ Min = minV, Max = maxV })
+                end
+            end
+        },
+        Dropdown = {
+            Save = function(idx, object)
+                return { type = "Dropdown", idx = idx, value = object.Value, multi = object.Multi or false }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local val = data.value
+                if obj then
+                    if obj.Multi and type(val) ~= "table" then
+                        val = { val }
+                    elseif not obj.Multi and type(val) == "table" then
+                        val = val[1]
+                    end
+                    if obj.Set then
+                        obj:Set(val)
+                    end
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](val)
+                end
+            end,
+        },
+        Colorpicker = {
+            Save = function(idx, object)
+                local col
+                if object.HexValue then
+                    return { type = "Colorpicker", idx = idx, value = object.HexValue, transparency = object.Alpha or 1 }
+                end
+                local flagData = Library and Library.Flags and Library.Flags[idx]
+                if flagData and type(flagData) == "table" and flagData.Color then
+                    return { type = "Colorpicker", idx = idx, value = flagData.Color, transparency = flagData.Alpha or object.Alpha or 1 }
+                end
+                col = object.Color or (type(object.Value) == "table" and object.Value.Color3) or nil
+                if not col and object.Hue and object.Saturation and object.Brightness then
+                    col = Color3.fromHSV(object.Hue, object.Saturation, object.Brightness)
+                end
+                col = col or Color3.new(1, 1, 1)
+                local alpha = object.Alpha or (type(object.Value) == "table" and object.Value.Alpha) or 1
+                local hex = typeof(col) == "Color3" and col:ToHex() or "ffffff"
+                return { type = "Colorpicker", idx = idx, value = hex, transparency = alpha }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local hexVal = tostring(data.value or "ffffff")
+                if hexVal:sub(1, 1) == "#" then hexVal = hexVal:sub(2) end
+                local ok, color = pcall(Color3.fromHex, hexVal)
+                if not ok then color = Color3.new(1, 1, 1) end
+                local alpha = tonumber(data.transparency or data.alpha) or 1
+                if obj and obj.Set then
+                    obj:Set(color, alpha)
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](color, alpha)
+                end
+            end,
+        },
+        GradientColorpicker = {
+            Save = function(idx, object)
+                local c1 = object.Color1 or Color3.new(1, 1, 1)
+                local c2 = object.Color2 or Color3.new(1, 1, 1)
+                local a1 = tonumber(object.Alpha1) or 1
+                local a2 = tonumber(object.Alpha2) or 1
+                return {
+                    type = "GradientColorpicker",
+                    idx = idx,
+                    color1 = typeof(c1) == "Color3" and c1:ToHex() or "ffffff",
+                    color2 = typeof(c2) == "Color3" and c2:ToHex() or "ffffff",
+                    alpha1 = a1,
+                    alpha2 = a2
+                }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local h1 = tostring(data.color1 or "ffffff"):gsub("^#", "")
+                local h2 = tostring(data.color2 or "ffffff"):gsub("^#", "")
+                local ok1, c1 = pcall(Color3.fromHex, h1)
+                local ok2, c2 = pcall(Color3.fromHex, h2)
+                c1 = ok1 and c1 or Color3.new(1, 1, 1)
+                c2 = ok2 and c2 or Color3.new(1, 1, 1)
+                local a1 = tonumber(data.alpha1) or 1
+                local a2 = tonumber(data.alpha2) or 1
+                if obj and obj.Set then
+                    obj:Set(c1, c2, a1, a2)
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx]({ Color1 = c1, Color2 = c2, Alpha1 = a1, Alpha2 = a2 })
+                end
+            end
+        },
+        Keybind = {
+            Save = function(idx, object)
+                return {
+                    type = "Keybind",
+                    idx = idx,
+                    key = object.Key or object.Value or "None",
+                    mode = object.Mode or "toggle",
+                    toggled = object.Toggled or false
+                }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local kData = {
+                    Key = data.key or data.value or "None",
+                    Mode = data.mode or "toggle"
+                }
+                if obj and obj.Set then
+                    obj:Set(kData)
+                    if data.toggled ~= nil then
+                        obj.Toggled = (data.toggled == true or data.toggled == "true")
+                        if Library and Library.Flags then
+                            Library.Flags[idx] = {
+                                Mode = obj.Mode,
+                                Key = obj.Key,
+                                Toggled = obj.Toggled
+                            }
+                        end
+                    end
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](kData)
+                end
+            end,
+        },
+        Input = {
+            Save = function(idx, object)
+                return { type = "Input", idx = idx, text = tostring(object.Value or "") }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                local txt = tostring(data.text or data.value or "")
+                if obj and obj.Set then
+                    obj:Set(txt)
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](txt)
+                end
+            end,
+        },
+    }
+
+    function SaveManager:SetIgnoreIndexes(list)
+        for _, key in next, list do
+            self.Ignore[key] = true
+        end
+    end
+
+    function SaveManager:SetFolder(folder)
+        self.Folder = folder
+        self:BuildFolderTree()
+    end
+
+    function SaveManager:Save(name)
+        if not name or name == "" then
+            return false, "no config file is selected"
+        end
+
+        local cleanName = name
+        if cleanName:sub(-5):lower() == ".json" then
+            cleanName = cleanName:sub(1, -6)
+        end
+
+        local fullPath = self.Folder .. "/settings/" .. cleanName .. ".json"
+        local data = { objects = {} }
+
+        local optionsSource = self.Options
+        if not optionsSource or next(optionsSource) == nil then
+            optionsSource = getgenv().Options or (self.Library and self.Library.Options) or {}
+        end
+
+        for idx, _ in pairs(optionsSource) do
+            if type(idx) == "string" then
+                if idx:match("ModeDropdown$") or idx:match("keybindToggle$") or idx:match("AnimationDropdown$") then
+                    self.Ignore[idx] = true
+                end
+            end
+        end
+
+        for idx, option in pairs(optionsSource) do
+            if self.Ignore[idx] then continue end
+            local optType = option.Type
+            if not optType then
+                if option.Key ~= nil or option.Toggled ~= nil or option.Picking ~= nil then
+                    optType = "Keybind"
+                elseif option.HexValue ~= nil or (option.Hue ~= nil and option.Saturation ~= nil) then
+                    optType = "Colorpicker"
+                elseif type(option.Value) == "boolean" then
+                    optType = "Toggle"
+                elseif type(option.Value) == "number" or option.Min ~= nil or option.Max ~= nil then
+                    optType = "Slider"
+                elseif option.Options ~= nil or option.Items ~= nil then
+                    optType = "Dropdown"
+                elseif type(option.Value) == "string" then
+                    optType = "Input"
+                end
+            end
+            if optType then
+                local parser = ResolveParser(optType)
+                if parser and parser.Save then
+                    local ok, entry = pcall(parser.Save, idx, option)
+                    if ok and entry then
+                        table.insert(data.objects, entry)
+                    end
+                end
+            end
+        end
+
+        local success, encoded = pcall(httpService.JSONEncode, httpService, data)
+        if not success then
+            return false, "failed to encode data"
+        end
+
+        writefile(fullPath, encoded)
+        return true
+    end
+
+    function SaveManager:Load(name)
+        if not name or name == "" then
+            return false, "no config file is selected"
+        end
+
+        local cleanName = name
+        if cleanName:sub(-5):lower() == ".json" then
+            cleanName = cleanName:sub(1, -6)
+        end
+
+        local file = self.Folder .. "/settings/" .. cleanName .. ".json"
+        if not isfile(file) then return false, "invalid file" end
+
+        local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
+        if not success then return false, "decode error" end
+
+        if decoded and decoded.objects then
+            local loadOrder = { Toggle = 1, Slider = 2, Dropdown = 3, Colorpicker = 4, Keybind = 5, Input = 6 }
+            local sorted = {}
+            for _, option in next, decoded.objects do
+                table.insert(sorted, option)
+            end
+            table.sort(sorted, function(a, b)
+                local aType = TypeAliases[a.type or ""] or a.type or ""
+                local bType = TypeAliases[b.type or ""] or b.type or ""
+                return (loadOrder[aType] or 99) < (loadOrder[bType] or 99)
+            end)
+
+            for _, option in ipairs(sorted) do
+                local optType = option.type
+                if optType then
+                    local parser = ResolveParser(optType)
+                    if parser and parser.Load then
+                        local ok, err = pcall(parser.Load, option.idx, option)
+                        if not ok then
+                            warn("[SaveManager] Failed to load " .. tostring(option.idx) .. ": " .. tostring(err))
+                        end
+                    end
+                end
+            end
+        end
+
+        return true
+    end
+
+    function SaveManager:IgnoreThemeSettings()
+        self:SetIgnoreIndexes({
+            "InterfaceTheme", "AcrylicToggle", "TransparentToggle", "MenuKeybind", "KeybindMenuOpen"
+        })
+    end
+
+    function SaveManager:BuildFolderTree()
+        local paths = {
+            self.Folder,
+            self.Folder .. "/settings"
+        }
+
+        for i = 1, #paths do
+            local str = paths[i]
+            if not isfolder(str) then
+                makefolder(str)
+            end
+        end
+    end
+
+    function SaveManager:RefreshConfigList()
+        if not isfolder(self.Folder .. "/settings") then
+            self:BuildFolderTree()
+        end
+        local list = listfiles(self.Folder .. "/settings")
+        local out = {}
+        for i = 1, #list do
+            local file = list[i]
+            if file:sub(-5) == ".json" then
+                local pos = file:find(".json", 1, true)
+                local start = pos
+
+                local char = file:sub(pos, pos)
+                while char ~= "/" and char ~= "\\" and char ~= "" do
+                    pos = pos - 1
+                    char = file:sub(pos, pos)
+                end
+
+                if char == "/" or char == "\\" then
+                    local name = file:sub(pos + 1, start - 1)
+                    if name ~= "options" then
+                        table.insert(out, name)
+                    end
+                end
+            end
+        end
+        return out
+    end
+
+    function SaveManager:SetLibrary(library)
+        self.Library = library
+        self.Options = library.Options or getgenv().Options or {}
+    end
+
+    function SaveManager:Notify(subContent)
+        if self.Library and self.Library.Notification then
+            self.Library:Notification({
+                Name = "Config Loader",
+                Description = tostring(subContent),
+                Duration = 5
+            })
+        end
+    end
+
+    function SaveManager:LoadAutoloadConfig()
+        if isfile(self.Folder .. "/settings/autoload.txt") then
+            local name = readfile(self.Folder .. "/settings/autoload.txt")
+
+            local success, err = self:Load(name)
+            if not success then
+                return self:Notify("Failed to load autoload config: " .. tostring(err))
+            end
+
+            self:Notify(string.format("Auto loaded config %q", name))
+        end
+    end
+
+    function SaveManager:BuildConfigSection(tab)
+        assert(self.Library, "Must set SaveManager.Library")
+
+        local section
+        if tab.Section then
+            section = tab:Section({ Name = "Configuration", Side = 2 })
+        elseif tab.AddSection then
+            section = tab:AddSection({ Name = "Configuration", Side = 2 })
+        else
+            section = tab
+        end
+
+        local configInput = section:Textbox({ Name = "Config name", Flag = "SaveManager_ConfigName", Default = "" })
+        local configDrop = section:Dropdown({ Name = "Config list", Flag = "SaveManager_ConfigList", Items = self:RefreshConfigList(), Default = nil })
+
+        section:Button({
+            Name = "Create config",
+            Callback = function()
+                local name = SaveManager.Options.SaveManager_ConfigName and SaveManager.Options.SaveManager_ConfigName.Value or ""
+                if name:gsub("%s+", "") == "" then
+                    return self:Notify("Invalid config name (empty)")
+                end
+
+                local success, err = self:Save(name)
+                if not success then
+                    return self:Notify("Failed to save config: " .. tostring(err))
+                end
+
+                self:Notify(string.format("Created config %q", name))
+                if configDrop and configDrop.Refresh then
+                    configDrop:Refresh(self:RefreshConfigList())
+                end
+            end
+        })
+
+        section:Button({
+            Name = "Load config",
+            Callback = function()
+                local name = SaveManager.Options.SaveManager_ConfigList and SaveManager.Options.SaveManager_ConfigList.Value or ""
+                if type(name) == "table" then name = name[1] end
+
+                local success, err = self:Load(name)
+                if not success then
+                    return self:Notify("Failed to load config: " .. tostring(err))
+                end
+
+                self:Notify(string.format("Loaded config %q", name))
+            end
+        })
+
+        section:Button({
+            Name = "Overwrite config",
+            Callback = function()
+                local name = SaveManager.Options.SaveManager_ConfigList and SaveManager.Options.SaveManager_ConfigList.Value or ""
+                if type(name) == "table" then name = name[1] end
+
+                local success, err = self:Save(name)
+                if not success then
+                    return self:Notify("Failed to overwrite config: " .. tostring(err))
+                end
+
+                self:Notify(string.format("Overwrote config %q", name))
+            end
+        })
+
+        section:Button({
+            Name = "Refresh list",
+            Callback = function()
+                if configDrop and configDrop.Refresh then
+                    configDrop:Refresh(self:RefreshConfigList())
+                end
+            end
+        })
+
+        section:Button({
+            Name = "Set as autoload",
+            Callback = function()
+                local name = SaveManager.Options.SaveManager_ConfigList and SaveManager.Options.SaveManager_ConfigList.Value or ""
+                if type(name) == "table" then name = name[1] end
+
+                if not name or name == "" then
+                    return self:Notify("No config selected")
+                end
+
+                writefile(self.Folder .. "/settings/autoload.txt", name)
+                self:Notify(string.format("Set %q to auto load", name))
+            end
+        })
+
+        SaveManager:SetIgnoreIndexes({ "SaveManager_ConfigList", "SaveManager_ConfigName" })
+    end
+
+    function SaveManager:AutoIgnoreSubElements()
+        local optionsSource = self.Options
+        if not optionsSource or next(optionsSource) == nil then
+            optionsSource = getgenv().Options or {}
+        end
+        for idx, _ in pairs(optionsSource) do
+            if type(idx) == "string" then
+                if idx:match("ModeDropdown$") or idx:match("keybindToggle$") or idx:match("AnimationDropdown$") then
+                    self.Ignore[idx] = true
+                end
+            end
+        end
+    end
+
+    SaveManager:BuildFolderTree()
+end
+
+getgenv().SaveManager = SaveManager
+Library.SaveManager = SaveManager
+return Library
