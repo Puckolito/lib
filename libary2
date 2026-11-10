@@ -3,7 +3,8 @@
 local LoadingTick = os.clock()
 
 if not game:IsLoaded() then
-    pcall(function() game.Loaded:Wait() end)
+    local loadStart = os.clock()
+    repeat task.wait(0.1) until game:IsLoaded() or (os.clock() - loadStart > 8)
 end
 
 local cloneref = cloneref or function(o) return o end
@@ -66,12 +67,12 @@ local Options, MiscOptions do
 
         ["Boxes"] = false;
         ["BoxType"] = "Corner";
-        ["Box Gradient 1"] = { Color = rgb(210, 145, 78), Transparency = 0.9 };
+        ["Box Gradient 1"] = { Color = rgb(225, 115, 52), Transparency = 0.9 };
         ["Box Gradient 2"] = { Color = rgb(255, 0, 0), Transparency = 0.4 };
         ["Box Gradient Rotation"] = 90;
         ["Box Fill"] = false;
-        ["Box Fill 1"] = { Color = rgb(210, 145, 78), Transparency = 0.9 };
-        ["Box Fill 2"] = { Color = rgb(210, 145, 78), Transparency = 0.9 };
+        ["Box Fill 1"] = { Color = rgb(225, 115, 52), Transparency = 0.9 };
+        ["Box Fill 2"] = { Color = rgb(225, 115, 52), Transparency = 0.9 };
         ["Box Fill Rotation"] = 0;
 
         ["Healthbar"] = false;
@@ -1313,7 +1314,8 @@ local Library do
             LocalPlayer = Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.LocalPlayer
         end)
         if not LocalPlayer then
-            repeat task.wait() LocalPlayer = Players.LocalPlayer until LocalPlayer or not game
+            local lpStart = os.clock()
+            repeat task.wait(0.1) LocalPlayer = Players.LocalPlayer until LocalPlayer or not game or (os.clock() - lpStart > 8)
         end
     end
     local Camera = Workspace.CurrentCamera or Workspace:FindFirstChildOfClass("Camera")
@@ -2068,20 +2070,20 @@ local Library do
             ["Dark Gradient"] = FromRGB(211, 211, 211),
             ["Inactive Text"] = FromRGB(185, 185, 185),
             ["Element"] = FromRGB(34, 39, 45),
-            ["Accent"] = FromRGB(210, 145, 78),
+            ["Accent"] = FromRGB(225, 115, 52),
             ["Border"] = FromRGB(32, 36, 42)
         },
 
         ["Halloween"] = {
             ["Background"] = FromRGB(11, 10, 9),
             ["Inline"] = FromRGB(23, 18, 16),
-            ["Shadow"] = FromRGB(253, 133, 21),
+            ["Shadow"] = FromRGB(225, 115, 52),
             ["Text"] = FromRGB(198, 198, 198),
             ["Image"] = FromRGB(201, 201, 201),
             ["Dark Gradient"] = FromRGB(211, 202, 195),
             ["Inactive Text"] = FromRGB(179, 179, 179),
             ["Element"] = FromRGB(42, 32, 26),
-            ["Accent"] = FromRGB(253, 133, 21),
+            ["Accent"] = FromRGB(225, 115, 52),
             ["Border"] = FromRGB(42, 35, 32)
         },
 
@@ -3825,7 +3827,7 @@ local Library do
                     DropdownItems["OpenIcon"] = Instances:Create("ImageLabel", {
                         Parent = DropdownItems["RealDropdown"].Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(210, 145, 78),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 20, 0, 20),
@@ -3918,7 +3920,7 @@ local Library do
                     local CheckImage = Instances:Create("ImageLabel", {
                         Parent = OptionButton.Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(210, 145, 78),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 18, 0, 18),
@@ -4488,7 +4490,7 @@ local Library do
         Components.GradientColorpicker = function(Data)
             Data = Data or {}
             local def = Data.Default or {}
-            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(210, 145, 78)
+            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(225, 115, 52)
             local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
             local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
             local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
@@ -5190,7 +5192,7 @@ local Library do
                     DropdownItems["OpenIcon"] = Instances:Create("ImageLabel", {
                         Parent = DropdownItems["RealDropdown"].Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(210, 145, 78),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 20, 0, 20),
@@ -6897,7 +6899,7 @@ local Library do
                 Items["Logo"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(210, 145, 78),
+                    ImageColor3 = FromRGB(225, 115, 52),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = UDim2New(0, 20, 0, 20),
@@ -7085,7 +7087,7 @@ local Library do
                 Items["SendImageLabel"] = Instances:Create("ImageLabel", {
                     Parent = Items["SendMessageButton"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(210, 145, 78),
+                    ImageColor3 = FromRGB(225, 115, 52),
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(0.5, 0.5),
                     Image = "rbxassetid://93681479181206",
@@ -7102,7 +7104,7 @@ local Library do
                     AutomaticCanvasSize = Enum.AutomaticSize.Y,
                     BorderSizePixel = 0,
                     CanvasSize = UDim2New(0, 0, 0, 0),
-                    ScrollBarImageColor3 = FromRGB(210, 145, 78),
+                    ScrollBarImageColor3 = FromRGB(225, 115, 52),
                     MidImage = "rbxassetid://76010408336709",
                     BorderColor3 = FromRGB(0, 0, 0),
                     ScrollBarThickness = 2,
@@ -7692,7 +7694,7 @@ local Library do
                 Items["Icon"] = Instances:Create("ImageLabel", {
                     Parent = Items["KeybindsList"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(210, 145, 78),
+                    ImageColor3 = FromRGB(225, 115, 52),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Image = "rbxassetid://89224403789635",
@@ -9265,7 +9267,7 @@ local Library do
                     DropdownItems["OpenIcon"] = Instances:Create("ImageLabel", {
                         Parent = DropdownItems["RealDropdown"].Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(210, 145, 78),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 20, 0, 20),
@@ -9365,7 +9367,7 @@ local Library do
                     local CheckImage = Instances:Create("ImageLabel", {
                         Parent = OptionButton.Instance,
                         Name = "\0",
-                        ImageColor3 = FromRGB(210, 145, 78),
+                        ImageColor3 = FromRGB(225, 115, 52),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 18, 0, 18),
@@ -9927,7 +9929,7 @@ local Library do
                 Items["Icon"] = Instances:Create("ImageLabel", {
                     Parent = Items["Topbar"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(210, 145, 78),
+                    ImageColor3 = FromRGB(225, 115, 52),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = _hasSecIcon and UDim2New(0, 18, 0, 18) or UDim2New(0, 0, 0, 0),
@@ -10117,7 +10119,7 @@ Library.Sections.Toggle = function(self, Data)
             function Toggle:GradientColorpicker(Data)
                 Data = Data or {}
                 local def = Data.Default or {}
-                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(210, 145, 78)
+                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(225, 115, 52)
                 local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
                 local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
                 local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
@@ -10405,7 +10407,7 @@ Library.Sections.Toggle = function(self, Data)
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(210, 145, 78)
+                    BackgroundColor3 = FromRGB(225, 115, 52)
                 })  Items["Accent"]:AddToTheme({BackgroundColor3 = "Accent"})
 
                 Instances:Create("UICorner", {
@@ -10652,7 +10654,7 @@ Library.Sections.Toggle = function(self, Data)
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(210, 145, 78)
+                    BackgroundColor3 = FromRGB(225, 115, 52)
                 })  Items["Accent"]:AddToTheme({BackgroundColor3 = "Accent"})
 
                 Instances:Create("UICorner", {
@@ -11009,7 +11011,7 @@ Library.Sections.Toggle = function(self, Data)
             function Label:GradientColorpicker(Data)
                 Data = Data or {}
                 local def = Data.Default or {}
-                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(210, 145, 78)
+                local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(225, 115, 52)
                 local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
                 local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
                 local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
@@ -11271,7 +11273,7 @@ Library.Sections.Toggle = function(self, Data)
                 Interactive = (Data.Interactive ~= false),
                 AutoRotate = Data.AutoRotate or false,
                 ShowBox = (Data.ShowBox ~= false),
-                BoxColor = Data.BoxColor or (Library.Theme and Library.Theme.Accent) or FromRGB(210, 145, 78),
+                BoxColor = Data.BoxColor or (Library.Theme and Library.Theme.Accent) or FromRGB(225, 115, 52),
                 ShowHealth = (Data.ShowHealth ~= false),
                 Health = Data.Health or 100,
                 HealthColor = Data.HealthColor or FromRGB(0, 255, 0),
@@ -11567,7 +11569,7 @@ Library.Sections.Toggle = function(self, Data)
         Library.Sections.GradientColorpicker = function(self, Data)
             Data = Data or {}
             local def = Data.Default or {}
-            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(210, 145, 78)
+            local c1 = Data.Color1 or def[1] or def.Color1 or FromRGB(225, 115, 52)
             local c2 = Data.Color2 or def[2] or def.Color2 or FromRGB(255, 255, 255)
             local a1 = tonumber(Data.Alpha1 or def.Alpha1 or Data.Alpha or 1) or 1
             local a2 = tonumber(Data.Alpha2 or def.Alpha2 or 1) or 1
