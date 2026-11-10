@@ -2407,11 +2407,17 @@ local Library do
     end
 
     Library.DeleteConfig = function(self, Config)
-        if isfile(Library.Folders.Configs .. "/" .. Config) then
-            delfile(Library.Folders.Configs .. "/" .. Config)
+        if not Config or Config == "" then return end
+        local fileName = Config
+        if not StringFind(fileName, "%.json$") then
+            fileName = fileName .. ".json"
+        end
+        local path = Library.Folders.Configs .. "/" .. fileName
+        if isfile(path) then
+            delfile(path)
             Library:Notification({
                 Name = "Success",
-                Description = "Succesfully deleted config: ".. Config .. ".json",
+                Description = "Succesfully deleted config: " .. fileName,
                 Duration = 5,
                 Icon = "116339777575852",
                 IconColor = FromRGB(52, 255, 164)
@@ -2420,15 +2426,98 @@ local Library do
     end
 
     Library.SaveConfig = function(self, Config)
-        if isfile(Library.Folders.Configs .. "/" .. Config .. ".json") then
-            writefile(Library.Folders.Configs .. "/" .. Config .. ".json", Library:GetConfig())
+        if not Config or Config == "" then return end
+        local fileName = Config
+        if not StringFind(fileName, "%.json$") then
+            fileName = fileName .. ".json"
+        end
+        local path = Library.Folders.Configs .. "/" .. fileName
+        writefile(path, Library:GetConfig())
+        Library:Notification({
+            Name = "Success",
+            Description = "Succesfully saved config: " .. fileName,
+            Duration = 5,
+            Icon = "116339777575852",
+            IconColor = FromRGB(52, 255, 164)
+        })
+    end
+
+    Library.ExportConfig = function(self, Config)
+        local data
+        if Config and Config ~= "" then
+            local fileName = Config
+            if not StringFind(fileName, "%.json$") then
+                fileName = fileName .. ".json"
+            end
+            local path = Library.Folders.Configs .. "/" .. fileName
+            if isfile(path) then
+                data = readfile(path)
+            end
+        end
+        if not data then
+            data = Library:GetConfig()
+        end
+
+        local setClip = setclipboard or toclipboard or (syn and syn.write_clipboard) or (Clipboard and Clipboard.set)
+        if setClip and data then
+            pcall(setClip, data)
             Library:Notification({
-                Name = "Success",
-                Description = "Succesfully saved config: ".. Config .. ".json",
-                Duration = 5,
+                Name = "Config",
+                Description = "Config copied to clipboard",
+                Duration = 4,
                 Icon = "116339777575852",
                 IconColor = FromRGB(52, 255, 164)
             })
+            return true, data
+        end
+        return false, data
+    end
+
+    Library.ImportConfig = function(self, RawData, SaveAsName)
+        local data = RawData
+        if not data or data == "" then
+            local getClip = getclipboard or fromclipboard or (syn and syn.read_clipboard) or (Clipboard and Clipboard.get)
+            if getClip then
+                local ok, clip = pcall(getClip)
+                if ok and type(clip) == "string" and clip ~= "" then
+                    data = clip
+                end
+            end
+        end
+
+        if not data or data == "" then
+            Library:Notification({
+                Name = "Error",
+                Description = "No config data found to import",
+                Duration = 4,
+                Icon = "116339777575852",
+                IconColor = FromRGB(255, 80, 80)
+            })
+            return false
+        end
+
+        local success, result = Library:LoadConfig(data)
+        if success then
+            if SaveAsName and SaveAsName ~= "" then
+                Library:SaveConfig(SaveAsName)
+            end
+            Library:Notification({
+                Name = "Config",
+                Description = "Successfully imported config",
+                Duration = 4,
+                Icon = "116339777575852",
+                IconColor = FromRGB(52, 255, 164)
+            })
+            return true
+        else
+            Library:Notification({
+                Name = "Error",
+                Description = "Failed to parse config data",
+                Duration = 4,
+                Icon = "116339777575852",
+                IconColor = FromRGB(255, 80, 80)
+            })
+            return false
         end
     end
 
