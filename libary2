@@ -7,32 +7,7 @@ if not game:IsLoaded() then
 end
 
 local cloneref = cloneref or function(o) return o end
-
-local function GetSafeGuiParent()
-    if gethui then
-        local ok, res = pcall(gethui)
-        if ok and res then return res end
-    end
-    local ok, coregui = pcall(function()
-        return cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
-    end)
-    if ok and coregui then
-        local canParent = pcall(function()
-            local test = Instance.new("Folder")
-            test.Parent = coregui
-            test:Destroy()
-        end)
-        if canParent then return coregui end
-    end
-    local lp = game:GetService("Players").LocalPlayer
-    if lp then
-        local pg = lp:FindFirstChildOfClass("PlayerGui") or lp:WaitForChild("PlayerGui", 5)
-        if pg then return pg end
-    end
-    return game:GetService("CoreGui")
-end
-
-local gethui = gethui or GetSafeGuiParent
+local CoreGui = cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
 
 if getgenv().Library then
     getgenv().Library:Unload()
@@ -191,7 +166,7 @@ local Options, MiscOptions do
         end
     end
 
-    local safeEspGuiParent = GetSafeGuiParent()
+    local safeEspGuiParent = CoreGui
     getgenv().Esp = {
         Players = {},
         ScreenGui = Instance.new("ScreenGui", safeEspGuiParent),
@@ -2165,7 +2140,7 @@ local Library do
         end
     end)
 
-    local safeLibGuiParent = GetSafeGuiParent()
+    local safeLibGuiParent = CoreGui
 
     Library.Holder = Instances:Create("ScreenGui", {
         Parent = safeLibGuiParent,
@@ -7676,7 +7651,7 @@ local Library do
 
             local Items = { } do
                 Items["Watermark"] = Instances:Create("Frame", {
-                    Parent = (Library.Holder and Library.Holder.Instance) or Library.ScreenGui or GetSafeGuiParent(),
+                    Parent = (Library.Holder and Library.Holder.Instance) or Library.ScreenGui or CoreGui,
                     Name = "\0",
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(0.5, 0),
