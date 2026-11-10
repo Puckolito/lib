@@ -1649,7 +1649,9 @@ local Library do
             setmetatable(NewItem, Instances)
 
             for Property, Value in NewItem.Properties do
-                NewItem.Instance[Property] = Value
+                pcall(function()
+                    NewItem.Instance[Property] = Value
+                end)
             end
 
             return NewItem
@@ -2302,8 +2304,11 @@ local Library do
     end
 
     Library.NextFlag = function(self)
-        local FlagNumber = self.UnnamedFlags + 1
-        return StringFormat("Flag Number %s %s", FlagNumber, HttpService:GenerateGUID(false))
+        local cur = (type(self) == "table" and type(self.UnnamedFlags) == "number" and self.UnnamedFlags) or (type(Library) == "table" and type(Library.UnnamedFlags) == "number" and Library.UnnamedFlags) or 0
+        cur = cur + 1
+        if type(self) == "table" and self.UnnamedFlags ~= nil then self.UnnamedFlags = cur end
+        if type(Library) == "table" then Library.UnnamedFlags = cur end
+        return StringFormat("Flag Number %s %s", cur, HttpService:GenerateGUID(false))
     end
 
     Library.AddToTheme = function(self, Item, Properties)
@@ -2315,11 +2320,13 @@ local Library do
         }
 
         for Property, Value in ThemeData.Properties do
-            if type(Value) == "string" then
-                Item[Property] = self.Theme[Value]
-            else
-                Item[Property] = Value()
-            end
+            pcall(function()
+                if type(Value) == "string" then
+                    Item[Property] = self.Theme[Value]
+                else
+                    Item[Property] = Value()
+                end
+            end)
         end
 
         TableInsert(self.ThemeItems, ThemeData)
@@ -2836,11 +2843,9 @@ local Library do
 
             local PageSearchData = Library.SearchItems[Data.Page]
 
-            if not PageSearchData then
-                return
+            if PageSearchData then
+                TableInsert(PageSearchData, SearchData)
             end
-
-            TableInsert(PageSearchData, SearchData)
 
             Items["Toggle"]:Connect("MouseButton1Down", function()
                 Toggle:Set(not Toggle.Value)
@@ -3275,9 +3280,9 @@ local Library do
                     UpdateDropdownPos()
                     RenderStepped = RunService.RenderStepped:Connect(UpdateDropdownPos)
 
-                    for Index, Value in Library.OpenFrames do
-                        if Value.Name ~= Data.Name then
-                            Value:SetOpen(false)
+                    for Index, Value in pairs(Library.OpenFrames) do
+                        if Value and Value ~= Dropdown and Value.SetOpen and Value.Name ~= Data.Name then
+                            pcall(function() Value:SetOpen(false) end)
                         end
                     end
 
@@ -5747,9 +5752,9 @@ local Library do
                     Items["KeybindWindow"].Instance.Visible = true
                     Items["KeybindWindow"].Instance.Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + 25)
 
-                    for Index, Value in Library.OpenFrames do
-                        if Value.Type == "Keybind" then
-                            Value:SetOpen(false)
+                    for Index, Value in pairs(Library.OpenFrames) do
+                        if Value and Value ~= Keybind and Value.SetOpen and Value.Type == "Keybind" then
+                            pcall(function() Value:SetOpen(false) end)
                         end
                     end
 
@@ -7392,12 +7397,15 @@ local Library do
         end
 
         Library.Notification = function(self, Data)
+            if type(Data) == "string" then
+                Data = { Name = "Notification", Description = Data }
+            end
             Data = Data or { }
 
             local Notification = {
-                Name = Data.Name or Data.name or "Title",
-                Description = Data.Description or Data.description or "Description",
-                Duration = Data.Duration or Data.duration or 5,
+                Name = Data.Name or Data.name or Data.Title or Data.title or "Title",
+                Description = Data.Description or Data.description or Data.Content or Data.content or "Description",
+                Duration = Data.Duration or Data.duration or Data.Time or Data.time or 5,
                 Icon = Data.Icon or Data.icon or "9080568477801",
                 IconColor = Data.IconColor or Data.iconcolor or FromRGB(255, 255, 255),
             }
@@ -7541,6 +7549,18 @@ local Library do
 
             return Notification
         end
+
+        Library.Notify = function(self, Data, Content, Duration)
+            if type(Data) == "string" then
+                if Content then
+                    Data = { Name = Data, Description = tostring(Content), Duration = Duration or 5 }
+                else
+                    Data = { Description = Data, Name = "Notification", Duration = 5 }
+                end
+            end
+            return Library:Notification(Data)
+        end
+        Library.CreateNotification = Library.Notification
 
         Library.Watermark = function(self, Text, Logo, LogoColor, LogoSize)
             local Watermark = { }
@@ -7757,6 +7777,7 @@ local Library do
             end
 
             KeybindList.Items = Items
+            self.KeyList = KeybindList
             self.KeybindFrame = Items["KeybindsList"].Instance
             Items["KeybindsList"].Instance.Visible = false
 
@@ -7839,6 +7860,16 @@ local Library do
         end
 
         Library.Window = function(self, Data)
+            if self ~= Library and (Data == nil or type(Data) ~= "table") and type(self) == "table" and (self.Name or self.name or self.Size or self.Version or self.Logo) then
+                Data = self
+                self = Library
+            elseif self ~= Library and type(self) == "table" and not Data then
+                Data = self
+                self = Library
+            end
+            if type(Data) == "string" then
+                Data = { Name = Data }
+            end
             Data = Data or { }
 
             local Window = {
@@ -8547,14 +8578,41 @@ local Library do
                 Library.KeybindFrame.Visible = false
             end
 
+            Window.Tab = Library.Page
+            Window.AddTab = Library.Page
+            Window.CreateTab = Library.Page
+            Window.AddPage = Library.Page
+            Window.CreatePage = Library.Page
+            Window.Page = Library.Page
+            Window.Notify = function(self, ...) return Library:Notification(...) end
+            Window.Notification = function(self, ...) return Library:Notification(...) end
+            Window.Watermark = function(self, ...) return Library:Watermark(...) end
+
             return setmetatable(Window, self)
         end
 
+        Library.CreateWindow = Library.Window
+        Library.AddWindow = Library.Window
+        Library.New = Library.Window
+        Library.Create = Library.Window
+        Library.Tab = Library.Page
+        Library.AddTab = Library.Page
+        Library.CreateTab = Library.Page
+        Library.AddPage = Library.Page
+        Library.CreatePage = Library.Page
+
         Library.Page = function(self, Data)
+            local WindowObj = self
+            if WindowObj == Library or WindowObj == nil or not (type(WindowObj) == "table" and WindowObj.Pages) then
+                WindowObj = Library.CurrentWindow or Library.WindowInstance
+            end
+            if type(Data) == "string" then
+                Data = { Name = Data }
+            end
             Data = Data or { }
 
             local Page = {
-                Window = self,
+                Window = WindowObj,
 
                 Name = Data.Name or Data.name or "combat",
                 Icon = Data.Icon or Data.icon or "",
@@ -9857,16 +9915,29 @@ local Library do
         end
 
         Library.Pages.AddSection = function(self, Name, Side)
-            local data = type(Name) == "table" and Name or { Name = tostring(Name), Side = Side or 2 }
+            local data = type(Name) == "table" and Name or { Name = tostring(Name or "Section"), Side = Side or 1 }
             return self:Section(data)
         end
+        Library.Pages.CreateSection = Library.Pages.Section
+        Library.Pages.Tab = Library.Pages.SubPage
+        Library.Pages.AddTab = Library.Pages.SubPage
+        Library.Pages.CreateTab = Library.Pages.SubPage
+        Library.Pages.AddSubPage = Library.Pages.SubPage
+        Library.Pages.CreateSubPage = Library.Pages.SubPage
 
-        Library.Pages.Section = function(self, Data)
+        Library.Pages.Section = function(self, Data, Side)
+            local PageObj = self
+            if PageObj == Library.Pages or PageObj == Library or PageObj == nil or not (type(PageObj) == "table" and PageObj.ColumnsData) then
+                PageObj = Library.CurrentPage or (Library.CurrentWindow and Library.CurrentWindow.Pages and Library.CurrentWindow.Pages[1])
+            end
+            if type(Data) == "string" then
+                Data = { Name = Data, Side = Side or 1 }
+            end
             Data = Data or { }
 
             local Section = {
-                Window = self.Window,
-                Page = self,
+                Window = PageObj and PageObj.Window,
+                Page = PageObj,
 
                 Name = Data.Name or Data.name or "Section",
                 Side = Data.Side or Data.side or 1,
@@ -10014,60 +10085,184 @@ local Library do
         end
 
         
-        Library.Sections.Input = function(self, Data)
-            Data = Data or {}
-            Data.Name = Data.Name or Data.Title or Data.Flag or "Input"
+        Library.Sections.Input = function(self, Data, ...)
+            if type(Data) == "string" then
+                Data = { Name = Data, ... }
+            elseif type(Data) ~= "table" then
+                Data = {}
+            end
+            Data.Name = Data.Name or Data.Title or Data.Text or Data.Flag or "Input"
             return self:Textbox(Data)
         end
-
-        Library.Sections.AddInput = function(self, Flag, Data)
+        Library.Sections.AddInput = function(self, Flag, Data, ...)
             if type(Flag) == "table" then Data = Flag; Flag = nil end
-            Data = Data or {}
-            if Flag then Data.Flag = Flag end
-            Data.Name = Data.Title or Data.Name or Data.Flag or "Input"
+            if type(Data) == "string" then
+                Data = { Name = Data, Flag = Flag, ... }
+            elseif type(Data) ~= "table" then
+                Data = { Name = type(Flag) == "string" and Flag or "Input", Flag = Flag }
+            else
+                if Flag then Data.Flag = Flag end
+            end
+            Data.Name = Data.Title or Data.Name or Data.Text or Data.Flag or "Input"
             return self:Textbox(Data)
         end
+        Library.Sections.CreateInput = Library.Sections.AddInput
 
-        Library.Sections.AddDropdown = function(self, Flag, Data)
+        Library.Sections.AddButton = function(self, Data, Callback)
+            if type(Data) == "string" then
+                Data = { Name = Data, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = {}
+            end
+            Data.Name = Data.Title or Data.Name or Data.Text or "Button"
+            return self:Button(Data)
+        end
+        Library.Sections.CreateButton = Library.Sections.AddButton
+
+        Library.Sections.AddToggle = function(self, Flag, Data, Default, Callback)
             if type(Flag) == "table" then Data = Flag; Flag = nil end
-            Data = Data or {}
-            if Flag then Data.Flag = Flag end
-            Data.Name = Data.Title or Data.Name or Data.Flag or "Dropdown"
+            if type(Data) == "string" then
+                Data = { Name = Data, Flag = Flag, Default = Default, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = { Name = type(Flag) == "string" and Flag or "Toggle", Flag = Flag, Default = Default, Callback = Callback }
+            else
+                if Flag then Data.Flag = Flag end
+            end
+            Data.Name = Data.Title or Data.Name or Data.Text or Data.Flag or "Toggle"
+            return self:Toggle(Data)
+        end
+        Library.Sections.CreateToggle = Library.Sections.AddToggle
+
+        Library.Sections.AddSlider = function(self, Flag, Data, Min, Max, Default, Callback)
+            if type(Flag) == "table" then Data = Flag; Flag = nil end
+            if type(Data) == "string" then
+                Data = { Name = Data, Flag = Flag, Min = Min, Max = Max, Default = Default, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = { Name = type(Flag) == "string" and Flag or "Slider", Flag = Flag, Min = Min, Max = Max, Default = Default, Callback = Callback }
+            else
+                if Flag then Data.Flag = Flag end
+            end
+            Data.Name = Data.Title or Data.Name or Data.Text or Data.Flag or "Slider"
+            return self:Slider(Data)
+        end
+        Library.Sections.CreateSlider = Library.Sections.AddSlider
+
+        Library.Sections.AddDropdown = function(self, Flag, Data, Items, Default, Callback)
+            if type(Flag) == "table" then Data = Flag; Flag = nil end
+            if type(Data) == "string" then
+                Data = { Name = Data, Flag = Flag, Items = Items, Default = Default, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = { Name = type(Flag) == "string" and Flag or "Dropdown", Flag = Flag, Items = Items, Default = Default, Callback = Callback }
+            else
+                if Flag then Data.Flag = Flag end
+            end
+            Data.Name = Data.Title or Data.Name or Data.Text or Data.Flag or "Dropdown"
             Data.Items = Data.Values or Data.Items or {}
             return self:Dropdown(Data)
         end
+        Library.Sections.CreateDropdown = Library.Sections.AddDropdown
 
-        Library.Sections.AddButton = function(self, Data)
-            Data = Data or {}
-            Data.Name = Data.Title or Data.Name or "Button"
-            return self:Button(Data)
+        Library.Sections.AddLabel = function(self, Text, Alignment, Tooltip)
+            return self:Label(Text, Alignment, Tooltip)
         end
+        Library.Sections.CreateLabel = Library.Sections.AddLabel
 
-        Library.Sections.AddToggle = function(self, Flag, Data)
+        Library.Sections.AddTextbox = function(self, Flag, Data, Default, Placeholder, Callback)
+            if type(Flag) == "table" then Data = Flag; Flag = nil end
+            if type(Data) == "string" then
+                Data = { Name = Data, Flag = Flag, Default = Default, Placeholder = Placeholder, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = { Name = type(Flag) == "string" and Flag or "Textbox", Flag = Flag, Default = Default, Placeholder = Placeholder, Callback = Callback }
+            else
+                if Flag then Data.Flag = Flag end
+            end
+            Data.Name = Data.Title or Data.Name or Data.Text or Data.Flag or "Textbox"
+            return self:Textbox(Data)
+        end
+        Library.Sections.CreateTextbox = Library.Sections.AddTextbox
+
+        Library.Sections.Colorpicker = function(self, Data, Callback)
+            if type(Data) == "string" then
+                Data = { Name = Data, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = {}
+            end
+            local lbl = self:Label(Data.Name or "Colorpicker")
+            return lbl:Colorpicker(Data)
+        end
+        Library.Sections.AddColorpicker = function(self, Flag, Data, Callback)
+            if type(Flag) == "table" then Data = Flag; Flag = nil end
+            if type(Data) == "string" then
+                Data = { Name = Data, Flag = Flag, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = { Name = type(Flag) == "string" and Flag or "Colorpicker", Flag = Flag }
+            else
+                if Flag then Data.Flag = Flag end
+            end
+            return self:Colorpicker(Data)
+        end
+        Library.Sections.CreateColorpicker = Library.Sections.AddColorpicker
+
+        Library.Sections.Keybind = function(self, Data, Callback)
+            if type(Data) == "string" then
+                Data = { Name = Data, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = {}
+            end
+            local lbl = self:Label(Data.Name or "Keybind")
+            return lbl:Keybind(Data)
+        end
+        Library.Sections.AddKeybind = function(self, Flag, Data, Callback)
+            if type(Flag) == "table" then Data = Flag; Flag = nil end
+            if type(Data) == "string" then
+                Data = { Name = Data, Flag = Flag, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = { Name = type(Flag) == "string" and Flag or "Keybind", Flag = Flag }
+            else
+                if Flag then Data.Flag = Flag end
+            end
+            return self:Keybind(Data)
+        end
+        Library.Sections.CreateKeybind = Library.Sections.AddKeybind
+
+        Library.Sections.AddRangeSlider = function(self, Flag, Data)
             if type(Flag) == "table" then Data = Flag; Flag = nil end
             Data = Data or {}
             if Flag then Data.Flag = Flag end
-            Data.Name = Data.Title or Data.Name or Data.Flag or "Toggle"
-            return self:Toggle(Data)
+            return self:RangeSlider(Data)
         end
+        Library.Sections.CreateRangeSlider = Library.Sections.AddRangeSlider
+        Library.Sections.AddMinMaxSlider = Library.Sections.AddRangeSlider
+        Library.Sections.CreateMinMaxSlider = Library.Sections.AddRangeSlider
 
-        Library.Sections.AddSlider = function(self, Flag, Data)
-            if type(Flag) == "table" then Data = Flag; Flag = nil end
-            Data = Data or {}
-            if Flag then Data.Flag = Flag end
-            Data.Name = Data.Title or Data.Name or Data.Flag or "Slider"
-            return self:Slider(Data)
+        Library.Sections.AddESPPreview = function(self, Data)
+            return self:ESPPreview(Data)
         end
+        Library.Sections.CreateESPPreview = Library.Sections.AddESPPreview
 
-Library.Sections.Toggle = function(self, Data)
-            Data = Data or { }
+        Library.Sections.AddViewport = function(self, Data)
+            return self:Viewport(Data)
+        end
+        Library.Sections.CreateViewport = Library.Sections.AddViewport
+
+        Library.Sections.Toggle = function(self, Data, Callback, Default, Flag)
+            if type(Data) == "string" then
+                Data = {
+                    Name = Data,
+                    Callback = type(Callback) == "function" and Callback or (type(Default) == "function" and Default or function() end),
+                    Default = type(Callback) == "boolean" and Callback or (type(Default) == "boolean" and Default or false),
+                    Flag = type(Flag) == "string" and Flag or (type(Default) == "string" and Default or (type(Callback) == "string" and Callback or nil))
+                }
+            elseif type(Data) ~= "table" then
+                Data = {}
+            end
 
             local Toggle = {
                 Window = self.Window,
                 Page = self.Page,
                 Section = self,
 
-                Name = Data.Name or Data.name or "Toggle",
+                Name = Data.Name or Data.name or Data.Title or Data.title or Data.Text or Data.text or "Toggle",
                 Flag = Data.Flag or Data.flag or Library:NextFlag(),
                 Default = Data.Default or Data.default or false,
                 Callback = Data.Callback or Data.callback or function() end,
@@ -10219,18 +10414,39 @@ Library.Sections.Toggle = function(self, Data)
                 return NewKeybind
             end
 
+            Toggle.SetVisible = Toggle.SetVisibility
+            Toggle.SetValue = Toggle.Set
+            Toggle.SetState = Toggle.Set
+            Toggle.AddColorpicker = Toggle.Colorpicker
+            Toggle.CreateColorpicker = Toggle.Colorpicker
+            Toggle.AddKeybind = Toggle.Keybind
+            Toggle.CreateKeybind = Toggle.Keybind
+            Toggle.AddGradientColorpicker = Toggle.GradientColorpicker
+            Toggle.CreateGradientColorpicker = Toggle.GradientColorpicker
+            function Toggle:OnChanged(cb)
+                local oldCb = Toggle.Callback
+                Toggle.Callback = function(...)
+                    if oldCb then oldCb(...) end
+                    cb(...)
+                end
+            end
+
             return Toggle
         end
 
-        Library.Sections.Button = function(self, Data)
-            Data = Data or { }
+        Library.Sections.Button = function(self, Data, Callback)
+            if type(Data) == "string" then
+                Data = { Name = Data, Callback = Callback }
+            elseif type(Data) ~= "table" then
+                Data = { }
+            end
 
             local Button = {
                 Window = self.Window,
                 Page = self.Page,
                 Section = self,
 
-                Name = Data.Name or Data.name or "Button",
+                Name = Data.Name or Data.name or Data.Title or Data.title or Data.Text or Data.text or "Button",
                 Callback = Data.Callback or Data.callback or function() end,
                 Tooltip = Data.Tooltip or Data.tooltip or nil
             }
@@ -10318,21 +10534,44 @@ Library.Sections.Toggle = function(self, Data)
 
             local PageSearchData = Library.SearchItems[Button.Page]
 
-            if not PageSearchData then
-                return
+            if PageSearchData then
+                TableInsert(PageSearchData, SearchData)
             end
-
-            TableInsert(PageSearchData, SearchData)
 
             Items["Button"]:Connect("MouseButton1Down", function()
                 Button:Press()
             end)
 
+            Button.SetVisible = Button.SetVisibility
+            Button.Fire = Button.Press
+            Button.Click = Button.Press
+            function Button:SetText(Text)
+                Button.Name = tostring(Text)
+                if Items["Text"] and Items["Text"].Instance then
+                    Items["Text"].Instance.Text = tostring(Text)
+                end
+            end
+            Button.SetTitle = Button.SetText
+            Button.SetName = Button.SetText
+            function Button:SetCallback(cb)
+                Button.Callback = cb
+            end
+
             return Button
         end
 
-        Library.Sections.Slider = function(self, Data)
-            Data = Data or {}
+        Library.Sections.Slider = function(self, Data, Min, Max, Default, Callback)
+            if type(Data) == "string" then
+                Data = {
+                    Name = Data,
+                    Min = type(Min) == "number" and Min or 0,
+                    Max = type(Max) == "number" and Max or 100,
+                    Default = type(Default) == "number" and Default or (type(Min) == "number" and Min or 0),
+                    Callback = type(Callback) == "function" and Callback or (type(Default) == "function" and Default or function() end)
+                }
+            elseif type(Data) ~= "table" then
+                Data = {}
+            end
             if Data.Range or Data.MinMax or Data.RangeSlider then
                 return self:RangeSlider(Data)
             end
@@ -10342,7 +10581,7 @@ Library.Sections.Toggle = function(self, Data)
                 Page = self.Page,
                 Section = self,
 
-                Name = Data.Name or Data.name or "Slider",
+                Name = Data.Name or Data.name or Data.Title or Data.title or Data.Text or Data.text or "Slider",
                 Min = Data.Min or Data.min or 0,
                 Max = Data.Max or Data.max or 100,
                 Flag = Data.Flag or Data.flag or Library:NextFlag(),
@@ -10515,11 +10754,9 @@ Library.Sections.Toggle = function(self, Data)
 
             local PageSearchData = Library.SearchItems[Slider.Page]
 
-            if not PageSearchData then
-                return
+            if PageSearchData then
+                TableInsert(PageSearchData, SearchData)
             end
-
-            TableInsert(PageSearchData, SearchData)
 
             local InputChanged
 
@@ -10565,6 +10802,17 @@ Library.Sections.Toggle = function(self, Data)
 
             Library.SetFlags[Slider.Flag] = function(Value)
                 Slider:Set(Value)
+            end
+
+            Slider.SetVisible = Slider.SetVisibility
+            Slider.SetValue = Slider.Set
+            Slider.GetValue = function(self) return Slider.Value end
+            function Slider:OnChanged(cb)
+                local oldCb = Slider.Callback
+                Slider.Callback = function(...)
+                    if oldCb then oldCb(...) end
+                    cb(...)
+                end
             end
 
             return Slider
@@ -10847,19 +11095,39 @@ Library.Sections.Toggle = function(self, Data)
                 RangeSlider:Set(Value)
             end
 
+            RangeSlider.SetVisible = RangeSlider.SetVisibility
+            RangeSlider.SetValue = RangeSlider.Set
+            RangeSlider.GetValue = function(self) return RangeSlider.Value end
+            function RangeSlider:OnChanged(cb)
+                local oldCb = RangeSlider.Callback
+                RangeSlider.Callback = function(...)
+                    if oldCb then oldCb(...) end
+                    cb(...)
+                end
+            end
+
             return RangeSlider
         end
         Library.Sections.MinMaxSlider = Library.Sections.RangeSlider
 
-        Library.Sections.Dropdown = function(self, Data)
-            Data = Data or { }
+        Library.Sections.Dropdown = function(self, Data, ItemsList, Default, Callback)
+            if type(Data) == "string" then
+                Data = {
+                    Name = Data,
+                    Items = type(ItemsList) == "table" and ItemsList or {},
+                    Default = Default,
+                    Callback = type(Callback) == "function" and Callback or (type(Default) == "function" and Default or function() end)
+                }
+            elseif type(Data) ~= "table" then
+                Data = {}
+            end
 
             local Dropdown = {
                 Window = self.Window,
                 Page = self.Page,
                 Section = self,
 
-                Name = Data.Name or Data.name or "Dropdown",
+                Name = Data.Name or Data.name or Data.Title or Data.title or Data.Text or Data.text or "Dropdown",
                 Flag = Data.Flag or Data.flag or Library:NextFlag(),
                 Default = Data.Default or Data.default or nil,
                 Items = Data.Items or Data.items or { "One", "Two", "Three" },
@@ -10908,11 +11176,30 @@ Library.Sections.Toggle = function(self, Data)
                 NewDropdown:SetVisibility(Bool)
             end
             Dropdown.SetVisible = Dropdown.SetVisibility
+            Dropdown.SetValue = Dropdown.Set
+            Dropdown.SetValues = Dropdown.Refresh
+            Dropdown.SetOptions = Dropdown.Refresh
+            Dropdown.SetItems = Dropdown.Refresh
+            Dropdown.GetValue = Dropdown.Get
+            function Dropdown:OnChanged(cb)
+                local oldCb = Dropdown.Callback
+                Dropdown.Callback = function(...)
+                    if oldCb then oldCb(...) end
+                    cb(...)
+                end
+            end
 
             return Dropdown
         end
 
         Library.Sections.Label = function(self, Text, Alignment, Tooltip)
+            if type(Text) == "table" then
+                local tbl = Text
+                Text = tbl.Name or tbl.name or tbl.Text or tbl.text or tbl.Title or tbl.title or "Label"
+                Alignment = tbl.Alignment or tbl.alignment or tbl.Align or tbl.align or Alignment
+                Tooltip = tbl.Tooltip or tbl.tooltip or Tooltip
+            end
+
             local Label = {
                 Window = self.Window,
                 Page = self.Page,
@@ -11111,24 +11398,47 @@ Library.Sections.Toggle = function(self, Data)
 
             local PageSearchData = Library.SearchItems[Label.Page]
 
-            if not PageSearchData then
-                return
+            if PageSearchData then
+                TableInsert(PageSearchData, SearchData)
             end
 
-            TableInsert(PageSearchData, SearchData)
+            Label.SetVisible = Label.SetVisibility
+            Label.AddColorpicker = Label.Colorpicker
+            Label.CreateColorpicker = Label.Colorpicker
+            Label.AddKeybind = Label.Keybind
+            Label.CreateKeybind = Label.Keybind
+            Label.AddGradientColorpicker = Label.GradientColorpicker
+            Label.CreateGradientColorpicker = Label.GradientColorpicker
+            function Label:SetText(NewText)
+                Label.Name = tostring(NewText)
+                if Items["Text"] and Items["Text"].Instance then
+                    Items["Text"].Instance.Text = tostring(NewText)
+                end
+            end
+            Label.SetTitle = Label.SetText
+            Label.SetName = Label.SetText
 
             return Label
         end
 
-        Library.Sections.Textbox = function(self, Data)
-            Data = Data or { }
+        Library.Sections.Textbox = function(self, Data, Default, Placeholder, Callback)
+            if type(Data) == "string" then
+                Data = {
+                    Name = Data,
+                    Default = type(Default) == "string" and Default or "",
+                    Placeholder = type(Placeholder) == "string" and Placeholder or (type(Default) == "string" and Default or "..."),
+                    Callback = type(Callback) == "function" and Callback or function() end
+                }
+            elseif type(Data) ~= "table" then
+                Data = { }
+            end
 
             local Textbox = {
                 Window = self.Window,
                 Page = self.Page,
                 Section = self,
 
-                Name = Data.Name or Data.name or "Textbox",
+                Name = Data.Name or Data.name or Data.Title or Data.title or Data.Text or Data.text or "Textbox",
                 Placeholder = Data.Placeholder or Data.placeholder or "...",
                 Flag = Data.Flag or Data.flag or Library:NextFlag(),
                 Default = Data.Default or Data.default or "",
@@ -11260,11 +11570,9 @@ Library.Sections.Toggle = function(self, Data)
 
             local PageSearchData = Library.SearchItems[Textbox.Page]
 
-            if not PageSearchData then
-                return
+            if PageSearchData then
+                TableInsert(PageSearchData, SearchData)
             end
-
-            TableInsert(PageSearchData, SearchData)
 
             Items["Input"]:Connect("Focused", function()
                 Items["Input"]:ChangeItemTheme({TextColor3 = "Text", PlaceholderColor3 = "Inactive Text"})
@@ -11281,6 +11589,19 @@ Library.Sections.Toggle = function(self, Data)
 
             Library.SetFlags[Textbox.Flag] = function(Value)
                 Textbox:Set(Value)
+            end
+
+            Textbox.SetVisible = Textbox.SetVisibility
+            Textbox.SetValue = Textbox.Set
+            Textbox.SetText = Textbox.Set
+            Textbox.GetValue = Textbox.Get
+            Textbox.GetText = Textbox.Get
+            function Textbox:OnChanged(cb)
+                local oldCb = Textbox.Callback
+                Textbox.Callback = function(...)
+                    if oldCb then oldCb(...) end
+                    cb(...)
+                end
             end
 
             return Textbox
@@ -11626,398 +11947,7 @@ Library.Sections.Toggle = function(self, Data)
             })  TextLabel:AddToTheme({TextColor3 = "Text"})
 
             if Data.Tooltip then
-                Container:Tooltip(Data.Tooltip)
-            end
-
-            local NewGradient, GradItems = Components.GradientColorpicker({
-                Window = self.Window,
-                Page = self.Page,
-                Parent = Container,
-                Name = Data.Name or "Gradient Color",
-                Flag = Data.Flag or Library:NextFlag(),
-                Color1 = c1,
-                Color2 = c2,
-                Alpha1 = a1,
-                Alpha2 = a2,
-                Callback = Data.Callback,
-                Count = 0
-            })
-
-            return NewGradient
-        end
-    end
-
-    Library.Init = function(self)
-        local AutoloadConfig = readfile(Library.Folders.Directory .. "/AutoLoadConfig (do not modify this).json")
-        local AutoloadTheme = readfile(Library.Folders.Directory .. "/AutoLoadTheme (do not modify this).json")
-
-        if AutoloadConfig ~= "" then
-            local Success, Result = Library:LoadConfig(AutoloadConfig)
-
-            if Success then
-                Library:Notification({
-                    Name = "Success",
-                    Description = "Successfully loaded autoload config",
-                    Duration = 5,
-                    Icon = "116339777575852",
-                    IconColor = Color3.fromRGB(52, 255, 164)
-                })
-            else
-                Library:Notification({
-                    Name = "Error!",
-                    Description = "Failed to load autoload config, error:\n" .. Result,
-                    Duration = 5,
-                    Icon = "97118059177470",
-                    IconColor = Color3.fromRGB(255, 120, 120)
-                })
-            end
-        end
-
-        if AutoloadTheme ~= "" then
-            local Success, Result = Library:LoadTheme(AutoloadTheme)
-
-            if Success then
-                Library:Notification({
-                    Name = "Success",
-                    Description = "Successfully loaded autoload theme",
-                    Duration = 5,
-                    Icon = "116339777575852",
-                    IconColor = Color3.fromRGB(52, 255, 164)
-                })
-            else
-                Library:Notification({
-                    Name = "Error!",
-                    Description = "Failed to load autoload theme, error:\n" .. Result,
-                    Duration = 5,
-                    Icon = "97118059177470",
-                    IconColor = Color3.fromRGB(255, 120, 120)
-                })
-            end
-        end
-    end
-end
-
-getgenv().Library = Library
-
-local httpService = game:GetService("HttpService")
-
-local SaveManager = {} do
-    SaveManager.Folder = "MerquryHub"
-    SaveManager.Ignore = {}
-    SaveManager.Options = {}
-    SaveManager.Library = nil
-
-    local function GetOptionObj(idx)
-        if SaveManager.Options and SaveManager.Options[idx] then
-            return SaveManager.Options[idx]
-        elseif getgenv().Options and getgenv().Options[idx] then
-            return getgenv().Options[idx]
-        elseif SaveManager.Library and SaveManager.Library.Options and SaveManager.Library.Options[idx] then
-            return SaveManager.Library.Options[idx]
-        end
-        return nil
-    end
-
-    local TypeAliases = {
-        toggle = "Toggle", Toggle = "Toggle",
-        slider = "Slider", Slider = "Slider",
-        rangeslider = "RangeSlider", RangeSlider = "RangeSlider", minmaxslider = "RangeSlider", MinMaxSlider = "RangeSlider",
-        dropdown = "Dropdown", Dropdown = "Dropdown",
-        colorpicker = "Colorpicker", Colorpicker = "Colorpicker", ColorPicker = "Colorpicker", color = "Colorpicker",
-        gradientcolorpicker = "GradientColorpicker", GradientColorpicker = "GradientColorpicker",
-        keybind = "Keybind", Keybind = "Keybind", KeyBind = "Keybind", bind = "Keybind",
-        input = "Input", Input = "Input", textbox = "Input", Textbox = "Input", TextBox = "Input",
-    }
-
-    local function ResolveParser(typeName)
-        if not typeName or type(typeName) ~= "string" then return nil end
-        local canonical = TypeAliases[typeName]
-        if canonical then return SaveManager.Parser[canonical] end
-        local p = SaveManager.Parser[typeName]
-        if p then return p end
-        local cap = typeName:sub(1,1):upper() .. typeName:sub(2):lower()
-        return SaveManager.Parser[cap]
-    end
-
-    SaveManager.Parser = {
-        Toggle = {
-            Save = function(idx, object)
-                return { type = "Toggle", idx = idx, value = object.Value }
-            end,
-            Load = function(idx, data)
-                local obj = GetOptionObj(idx)
-                local val = (data.value == true or data.value == "true")
-                if obj and obj.Set then
-                    obj:Set(val)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx](val)
-                end
-            end,
-        },
-        Slider = {
-            Save = function(idx, object)
-                return { type = "Slider", idx = idx, value = object.Value }
-            end,
-            Load = function(idx, data)
-                local obj = GetOptionObj(idx)
-                local v = tonumber(data.value)
-                if v and obj and obj.Set then
-                    obj:Set(v)
-                elseif v and SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx](v)
-                end
-            end,
-        },
-        RangeSlider = {
-            Save = function(idx, object)
-                local v = object.Value or {}
-                return {
-                    type = "RangeSlider",
-                    idx = idx,
-                    min = tonumber(v.Min or v[1]) or 0,
-                    max = tonumber(v.Max or v[2]) or 100
-                }
-            end,
-            Load = function(idx, data)
-                local obj = GetOptionObj(idx)
-                local minV = tonumber(data.min or (type(data.value) == "table" and (data.value.Min or data.value[1]))) or 0
-                local maxV = tonumber(data.max or (type(data.value) == "table" and (data.value.Max or data.value[2]))) or 100
-                if obj and obj.Set then
-                    obj:Set(minV, maxV)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx]({ Min = minV, Max = maxV })
-                end
-            end
-        },
-        Dropdown = {
-            Save = function(idx, object)
-                return { type = "Dropdown", idx = idx, value = object.Value, multi = object.Multi or false }
-            end,
-            Load = function(idx, data)
-                local obj = GetOptionObj(idx)
-                local val = data.value
-                if obj then
-                    if obj.Multi and type(val) ~= "table" then
-                        val = { val }
-                    elseif not obj.Multi and type(val) == "table" then
-                        val = val[1]
-                    end
-                    if obj.Set then
-                        obj:Set(val)
-                    end
-                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx](val)
-                end
-            end,
-        },
-        Colorpicker = {
-            Save = function(idx, object)
-                local col
-                if object.HexValue then
-                    return { type = "Colorpicker", idx = idx, value = object.HexValue, transparency = object.Alpha or 1 }
-                end
-                local flagData = Library and Library.Flags and Library.Flags[idx]
-                if flagData and type(flagData) == "table" and flagData.Color then
-                    return { type = "Colorpicker", idx = idx, value = flagData.Color, transparency = flagData.Alpha or object.Alpha or 1 }
-                end
-                col = object.Color or (type(object.Value) == "table" and object.Value.Color3) or nil
-                if not col and object.Hue and object.Saturation and object.Brightness then
-                    col = Color3.fromHSV(object.Hue, object.Saturation, object.Brightness)
-                end
-                col = col or Color3.new(1, 1, 1)
-                local alpha = object.Alpha or (type(object.Value) == "table" and object.Value.Alpha) or 1
-                local hex = typeof(col) == "Color3" and col:ToHex() or "ffffff"
-                return { type = "Colorpicker", idx = idx, value = hex, transparency = alpha }
-            end,
-            Load = function(idx, data)
-                local obj = GetOptionObj(idx)
-                local hexVal = tostring(data.value or "ffffff")
-                if hexVal:sub(1, 1) == "#" then hexVal = hexVal:sub(2) end
-                local ok, color = pcall(Color3.fromHex, hexVal)
-                if not ok then color = Color3.new(1, 1, 1) end
-                local alpha = tonumber(data.transparency or data.alpha) or 1
-                if obj and obj.Set then
-                    obj:Set(color, alpha)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx](color, alpha)
-                end
-            end,
-        },
-        GradientColorpicker = {
-            Save = function(idx, object)
-                local c1 = object.Color1 or Color3.new(1, 1, 1)
-                local c2 = object.Color2 or Color3.new(1, 1, 1)
-                local a1 = tonumber(object.Alpha1) or 1
-                local a2 = tonumber(object.Alpha2) or 1
-                return {
-                    type = "GradientColorpicker",
-                    idx = idx,
-                    color1 = typeof(c1) == "Color3" and c1:ToHex() or "ffffff",
-                    color2 = typeof(c2) == "Color3" and c2:ToHex() or "ffffff",
-                    alpha1 = a1,
-                    alpha2 = a2
-                }
-            end,
-            Load = function(idx, data)
-                local obj = GetOptionObj(idx)
-                local h1 = tostring(data.color1 or "ffffff"):gsub("^#", "")
-                local h2 = tostring(data.color2 or "ffffff"):gsub("^#", "")
-                local ok1, c1 = pcall(Color3.fromHex, h1)
-                local ok2, c2 = pcall(Color3.fromHex, h2)
-                c1 = ok1 and c1 or Color3.new(1, 1, 1)
-                c2 = ok2 and c2 or Color3.new(1, 1, 1)
-                local a1 = tonumber(data.alpha1) or 1
-                local a2 = tonumber(data.alpha2) or 1
-                if obj and obj.Set then
-                    obj:Set(c1, c2, a1, a2)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx]({ Color1 = c1, Color2 = c2, Alpha1 = a1, Alpha2 = a2 })
-                end
-            end
-        },
-        Keybind = {
-            Save = function(idx, object)
-                return {
-                    type = "Keybind",
-                    idx = idx,
-                    key = object.Key or object.Value or "None",
-                    mode = object.Mode or "toggle",
-                    toggled = object.Toggled or false
-                }
-            end,
-            Load = function(idx, data)
-                local obj = GetOptionObj(idx)
-                local kData = {
-                    Key = data.key or data.value or "None",
-                    Mode = data.mode or "toggle"
-                }
-                if obj and obj.Set then
-                    obj:Set(kData)
-                    if data.toggled ~= nil then
-                        obj.Toggled = (data.toggled == true or data.toggled == "true")
-                        if Library and Library.Flags then
-                            Library.Flags[idx] = {
-                                Mode = obj.Mode,
-                                Key = obj.Key,
-                                Toggled = obj.Toggled
-                            }
-                        end
-                    end
-                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx](kData)
-                end
-            end,
-        },
-        Input = {
-            Save = function(idx, object)
-                return { type = "Input", idx = idx, text = tostring(object.Value or "") }
-            end,
-            Load = function(idx, data)
-                local obj = GetOptionObj(idx)
-                local txt = tostring(data.text or data.value or "")
-                if obj and obj.Set then
-                    obj:Set(txt)
-                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
-                    SaveManager.Library.SetFlags[idx](txt)
-                end
-            end,
-        },
-    }
-
-    function SaveManager:SetIgnoreIndexes(list)
-        for _, key in next, list do
-            self.Ignore[key] = true
-        end
-    end
-
-    function SaveManager:SetFolder(folder)
-        self.Folder = folder
-        self:BuildFolderTree()
-    end
-
-    function SaveManager:Save(name)
-        if not name or name == "" then
-            return false, "no config file is selected"
-        end
-
-        local cleanName = name
-        if cleanName:sub(-5):lower() == ".json" then
-            cleanName = cleanName:sub(1, -6)
-        end
-
-        local fullPath = self.Folder .. "/settings/" .. cleanName .. ".json"
-        local data = { objects = {} }
-
-        local optionsSource = self.Options
-        if not optionsSource or next(optionsSource) == nil then
-            optionsSource = getgenv().Options or (self.Library and self.Library.Options) or {}
-        end
-
-        for idx, _ in pairs(optionsSource) do
-            if type(idx) == "string" then
-                if idx:match("ModeDropdown$") or idx:match("keybindToggle$") or idx:match("AnimationDropdown$") then
-                    self.Ignore[idx] = true
-                end
-            end
-        end
-
-        for idx, option in pairs(optionsSource) do
-            if self.Ignore[idx] then continue end
-            local optType = option.Type
-            if not optType then
-                if option.Key ~= nil or option.Toggled ~= nil or option.Picking ~= nil then
-                    optType = "Keybind"
-                elseif option.Color1 ~= nil or option.Hue1 ~= nil then
-                    optType = "GradientColorpicker"
-                elseif option.HexValue ~= nil or (option.Hue ~= nil and option.Saturation ~= nil) then
-                    optType = "Colorpicker"
-                elseif type(option.Value) == "boolean" then
-                    optType = "Toggle"
-                elseif type(option.Value) == "table" and (option.Value.Min ~= nil and option.Value.Max ~= nil) then
-                    optType = "RangeSlider"
-                elseif type(option.Value) == "number" or option.Min ~= nil or option.Max ~= nil then
-                    optType = "Slider"
-                elseif option.Options ~= nil or option.Items ~= nil then
-                    optType = "Dropdown"
-                elseif type(option.Value) == "string" then
-                    optType = "Input"
-                end
-            end
-            if optType then
-                local parser = ResolveParser(optType)
-                if parser and parser.Save then
-                    local ok, entry = pcall(parser.Save, idx, option)
-                    if ok and entry then
-                        table.insert(data.objects, entry)
-                    end
-                end
-            end
-        end
-
-        local success, encoded = pcall(httpService.JSONEncode, httpService, data)
-        if not success then
-            return false, "failed to encode data"
-        end
-
-        writefile(fullPath, encoded)
-        return true
-    end
-
-    function SaveManager:Load(name)
-        if not name or name == "" then
-            return false, "no config file is selected"
-        end
-
-        local cleanName = name
-        if cleanName:sub(-5):lower() == ".json" then
-            cleanName = cleanName:sub(1, -6)
-        end
-
-        local file = self.Folder .. "/settings/" .. cleanName .. ".json"
-        if not isfile(file) then return false, "invalid file" end
-
-        local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
-        if not success then retu
+                Containe
             table.sort(sorted, function(a, b)
                 local aType = TypeAliases[a.type or ""] or a.type or ""
                 local bType = TypeAliases[b.type or ""] or b.type or ""
