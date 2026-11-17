@@ -2086,7 +2086,7 @@ local Library do
             ["Border"] = FromRGB(32, 36, 42)
         },
 
-        ["Merqury Hub"] = {
+        ["Merqury"] = {
             ["Background"] = FromRGB(16, 18, 21),
             ["Inline"] = FromRGB(22, 25, 29),
             ["Shadow"] = FromRGB(0, 0, 0),
@@ -2112,43 +2112,17 @@ local Library do
             ["Border"] = FromRGB(32, 36, 42)
         },
 
-        ["Aqua"] = {
-            ["Background"] = FromRGB(19, 21, 23),
-            ["Inline"] = FromRGB(31, 35, 39),
-            ["Shadow"] = FromRGB(0, 0, 0),
-            ["Text"] = FromRGB(245, 245, 245),
-            ["Image"] = FromRGB(255, 255, 255),
-            ["Dark Gradient"] = FromRGB(211, 211, 211),
-            ["Inactive Text"] = FromRGB(185, 185, 185),
-            ["Element"] = FromRGB(58, 66, 77),
-            ["Accent"] = FromRGB(31, 106, 181),
-            ["Border"] = FromRGB(48, 56, 63)
-        },
-
-        ["Halloween"] = {
-            ["Background"] = FromRGB(11, 10, 9),
-            ["Inline"] = FromRGB(23, 18, 16),
-            ["Shadow"] = FromRGB(253, 133, 21),
-            ["Text"] = FromRGB(198, 198, 198),
-            ["Image"] = FromRGB(201, 201, 201),
-            ["Dark Gradient"] = FromRGB(211, 202, 195),
-            ["Inactive Text"] = FromRGB(179, 179, 179),
-            ["Element"] = FromRGB(42, 32, 26),
-            ["Accent"] = FromRGB(253, 133, 21),
-            ["Border"] = FromRGB(42, 35, 32)
-        },
-
-        ["One Tap"] = {
-            ["Background"] = FromRGB(51, 51, 51),
-            ["Inline"] = FromRGB(30, 30, 30),
-            ["Shadow"] = FromRGB(0, 0, 0),
-            ["Text"] = FromRGB(245, 245, 245),
-            ["Image"] = FromRGB(255, 255, 255),
-            ["Dark Gradient"] = FromRGB(211, 211, 211),
-            ["Inactive Text"] = FromRGB(185, 185, 185),
-            ["Element"] = FromRGB(45, 45, 45),
-            ["Accent"] = FromRGB(237, 170, 0),
-            ["Border"] = FromRGB(38, 38, 38)
+        ["Merqury Light"] = {
+            ["Background"] = FromRGB(242, 244, 248),
+            ["Inline"] = FromRGB(255, 255, 255),
+            ["Shadow"] = FromRGB(190, 195, 210),
+            ["Text"] = FromRGB(25, 28, 35),
+            ["Image"] = FromRGB(35, 40, 52),
+            ["Dark Gradient"] = FromRGB(242, 244, 248),
+            ["Inactive Text"] = FromRGB(115, 122, 136),
+            ["Element"] = FromRGB(232, 236, 244),
+            ["Accent"] = FromRGB(225, 115, 52),
+            ["Border"] = FromRGB(218, 224, 234)
         },
 
         ["Pearl"] = {
@@ -2160,8 +2134,47 @@ local Library do
             ["Dark Gradient"] = FromRGB(242, 244, 248),
             ["Inactive Text"] = FromRGB(115, 122, 136),
             ["Element"] = FromRGB(232, 236, 244),
-            ["Accent"] = FromRGB(142, 68, 173),
+            ["Accent"] = FromRGB(170, 130, 255),
             ["Border"] = FromRGB(218, 224, 234)
+        },
+
+        ["Glacier"] = {
+            ["Background"] = FromRGB(240, 244, 250),
+            ["Inline"] = FromRGB(255, 255, 255),
+            ["Shadow"] = FromRGB(190, 200, 215),
+            ["Text"] = FromRGB(25, 28, 35),
+            ["Image"] = FromRGB(35, 40, 52),
+            ["Dark Gradient"] = FromRGB(240, 244, 250),
+            ["Inactive Text"] = FromRGB(115, 125, 140),
+            ["Element"] = FromRGB(230, 238, 246),
+            ["Accent"] = FromRGB(0, 168, 232),
+            ["Border"] = FromRGB(215, 225, 238)
+        },
+
+        ["Rose Quartz"] = {
+            ["Background"] = FromRGB(248, 242, 245),
+            ["Inline"] = FromRGB(255, 255, 255),
+            ["Shadow"] = FromRGB(210, 195, 200),
+            ["Text"] = FromRGB(35, 25, 30),
+            ["Image"] = FromRGB(45, 35, 40),
+            ["Dark Gradient"] = FromRGB(248, 242, 245),
+            ["Inactive Text"] = FromRGB(135, 115, 125),
+            ["Element"] = FromRGB(242, 232, 236),
+            ["Accent"] = FromRGB(235, 75, 115),
+            ["Border"] = FromRGB(232, 218, 224)
+        },
+
+        ["Ivory Mint"] = {
+            ["Background"] = FromRGB(242, 247, 244),
+            ["Inline"] = FromRGB(255, 255, 255),
+            ["Shadow"] = FromRGB(190, 205, 195),
+            ["Text"] = FromRGB(25, 35, 28),
+            ["Image"] = FromRGB(35, 48, 38),
+            ["Dark Gradient"] = FromRGB(242, 247, 244),
+            ["Inactive Text"] = FromRGB(115, 135, 120),
+            ["Element"] = FromRGB(232, 242, 235),
+            ["Accent"] = FromRGB(38, 185, 125),
+            ["Border"] = FromRGB(218, 232, 222)
         },
 
         ["Midnight"] = {
@@ -2188,6 +2201,45 @@ local Library do
             ["Element"] = FromRGB(42, 30, 33),
             ["Accent"] = FromRGB(235, 60, 60),
             ["Border"] = FromRGB(50, 32, 35)
+        },
+
+        ["Emerald"] = {
+            ["Background"] = FromRGB(15, 20, 18),
+            ["Inline"] = FromRGB(20, 28, 25),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(220, 225, 222),
+            ["Image"] = FromRGB(220, 225, 222),
+            ["Dark Gradient"] = FromRGB(200, 215, 205),
+            ["Inactive Text"] = FromRGB(145, 160, 150),
+            ["Element"] = FromRGB(28, 40, 35),
+            ["Accent"] = FromRGB(46, 204, 113),
+            ["Border"] = FromRGB(30, 45, 38)
+        },
+
+        ["Amethyst"] = {
+            ["Background"] = FromRGB(18, 15, 24),
+            ["Inline"] = FromRGB(25, 20, 35),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(225, 220, 230),
+            ["Image"] = FromRGB(225, 220, 230),
+            ["Dark Gradient"] = FromRGB(210, 200, 220),
+            ["Inactive Text"] = FromRGB(155, 145, 165),
+            ["Element"] = FromRGB(38, 30, 52),
+            ["Accent"] = FromRGB(170, 130, 255),
+            ["Border"] = FromRGB(44, 34, 60)
+        },
+
+        ["One Tap"] = {
+            ["Background"] = FromRGB(51, 51, 51),
+            ["Inline"] = FromRGB(30, 30, 30),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(245, 245, 245),
+            ["Image"] = FromRGB(255, 255, 255),
+            ["Dark Gradient"] = FromRGB(211, 211, 211),
+            ["Inactive Text"] = FromRGB(185, 185, 185),
+            ["Element"] = FromRGB(45, 45, 45),
+            ["Accent"] = FromRGB(237, 170, 0),
+            ["Border"] = FromRGB(38, 38, 38)
         },
     }
 
@@ -8225,7 +8277,7 @@ local Library do
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })
                 if LogoColor then
-                    Items["Logo"]:AddToTheme({ImageColor3 = "Accent"})
+                    
                 end
 
                 Items["Text"] = Instances:Create("TextLabel", {
@@ -8323,7 +8375,7 @@ local Library do
                     Size = UDim2New(0, 22, 0, 22),
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
-                })  Items["Icon"]:AddToTheme({ImageColor3 = "Accent"})
+                })  Items["Icon"]:AddToTheme({ImageColor3 = "Image"})
 
                 Items["Text"] = Instances:Create("TextLabel", {
                     Parent = Items["KeybindsList"].Instance,
@@ -8640,7 +8692,7 @@ local Library do
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })
-                Items["Logo"]:AddToTheme({ImageColor3 = "Accent"})
+                
 
                 Items["Title"] = Instances:Create("TextLabel", {
                     Parent = Items["Topbar"].Instance,
@@ -9417,8 +9469,8 @@ local Library do
                     Items["Text"].Instance.Visible = true
                     Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, Items["Text"].Instance.TextBounds.X + _iconWidth + 11, 0, 32)})
                     if Page._hasIcon then
-                        Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
-                        Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
+                        Items["Icon"]:ChangeItemTheme({ImageColor3 = "Image"})
+                        Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Image, ImageTransparency = 0})
                     end
                     Library.CurrentPage = Page
                 else
@@ -9634,8 +9686,8 @@ local Library do
                 if Bool then
                     Items["Text"].Instance.Visible = true
                     Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, Items["Text"].Instance.TextBounds.X + 38, 0, 32)})
-                    Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
-                    Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
+                    Items["Icon"]:ChangeItemTheme({ImageColor3 = "Image"})
+                    Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Image, ImageTransparency = 0})
 
                     Library.CurrentPage = SubPage
                 else
@@ -10612,7 +10664,7 @@ local Library do
                     BorderSizePixel = 0,
                     Visible = _hasSecIcon,
                     BackgroundColor3 = FromRGB(255, 255, 255)
-                })  Items["Icon"]:AddToTheme({ImageColor3 = "Accent"})
+                })  Items["Icon"]:AddToTheme({ImageColor3 = "Image"})
 
                 Instances:Create("UIPadding", {
                     Parent = Items["Section"].Instance,
@@ -12624,12 +12676,12 @@ local Library do
     local ThemeManager = {
         Library = Library,
         Folder = "MerquryHub/Themes",
-        CurrentTheme = "Merqury Hub",
+        CurrentTheme = "Merqury",
         MenuInstance = nil,
         CardElements = {},
         ThemeDefinitions = {
-            ["Merqury Hub"] = {
-                Name = "Merqury Hub",
+            ["Merqury"] = {
+                Name = "Merqury",
                 Background = FromRGB(16, 18, 21),
                 Inline = FromRGB(22, 25, 29),
                 Element = FromRGB(34, 39, 45),
@@ -12654,57 +12706,70 @@ local Library do
                 DarkGradient = FromRGB(211, 211, 211),
                 Shadow = FromRGB(0, 0, 0)
             },
-            ["Aqua"] = {
-                Name = "Aqua",
-                Background = FromRGB(19, 21, 23),
-                Inline = FromRGB(31, 35, 39),
-                Element = FromRGB(58, 66, 77),
-                Accent = FromRGB(31, 106, 181),
-                Text = FromRGB(245, 245, 245),
-                InactiveText = FromRGB(185, 185, 185),
-                Image = FromRGB(255, 255, 255),
-                Border = FromRGB(48, 56, 63),
-                DarkGradient = FromRGB(211, 211, 211),
-                Shadow = FromRGB(0, 0, 0)
-            },
-            ["Halloween"] = {
-                Name = "Halloween",
-                Background = FromRGB(11, 10, 9),
-                Inline = FromRGB(23, 18, 16),
-                Element = FromRGB(42, 32, 26),
-                Accent = FromRGB(253, 133, 21),
-                Text = FromRGB(198, 198, 198),
-                InactiveText = FromRGB(179, 179, 179),
-                Image = FromRGB(201, 201, 201),
-                Border = FromRGB(42, 35, 32),
-                DarkGradient = FromRGB(211, 202, 195),
-                Shadow = FromRGB(253, 133, 21)
-            },
-            ["One Tap"] = {
-                Name = "One Tap",
-                Background = FromRGB(51, 51, 51),
-                Inline = FromRGB(30, 30, 30),
-                Element = FromRGB(45, 45, 45),
-                Accent = FromRGB(237, 170, 0),
-                Text = FromRGB(245, 245, 245),
-                InactiveText = FromRGB(185, 185, 185),
-                Image = FromRGB(255, 255, 255),
-                Border = FromRGB(38, 38, 38),
-                DarkGradient = FromRGB(211, 211, 211),
-                Shadow = FromRGB(0, 0, 0)
-            },
-            ["Pearl"] = {
-                Name = "Pearl",
+            ["Merqury Light"] = {
+                Name = "Merqury Light",
                 Background = FromRGB(242, 244, 248),
                 Inline = FromRGB(255, 255, 255),
                 Element = FromRGB(232, 236, 244),
-                Accent = FromRGB(142, 68, 173),
+                Accent = FromRGB(225, 115, 52),
                 Text = FromRGB(25, 28, 35),
                 InactiveText = FromRGB(115, 122, 136),
                 Image = FromRGB(35, 40, 52),
                 Border = FromRGB(218, 224, 234),
                 DarkGradient = FromRGB(242, 244, 248),
                 Shadow = FromRGB(190, 195, 210)
+            },
+            ["Pearl"] = {
+                Name = "Pearl",
+                Background = FromRGB(242, 244, 248),
+                Inline = FromRGB(255, 255, 255),
+                Element = FromRGB(232, 236, 244),
+                Accent = FromRGB(170, 130, 255),
+                Text = FromRGB(25, 28, 35),
+                InactiveText = FromRGB(115, 122, 136),
+                Image = FromRGB(35, 40, 52),
+                Border = FromRGB(218, 224, 234),
+                DarkGradient = FromRGB(242, 244, 248),
+                Shadow = FromRGB(190, 195, 210)
+            },
+            ["Glacier"] = {
+                Name = "Glacier",
+                Background = FromRGB(240, 244, 250),
+                Inline = FromRGB(255, 255, 255),
+                Element = FromRGB(230, 238, 246),
+                Accent = FromRGB(0, 168, 232),
+                Text = FromRGB(25, 28, 35),
+                InactiveText = FromRGB(115, 125, 140),
+                Image = FromRGB(35, 40, 52),
+                Border = FromRGB(215, 225, 238),
+                DarkGradient = FromRGB(240, 244, 250),
+                Shadow = FromRGB(190, 200, 215)
+            },
+            ["Rose Quartz"] = {
+                Name = "Rose Quartz",
+                Background = FromRGB(248, 242, 245),
+                Inline = FromRGB(255, 255, 255),
+                Element = FromRGB(242, 232, 236),
+                Accent = FromRGB(235, 75, 115),
+                Text = FromRGB(35, 25, 30),
+                InactiveText = FromRGB(135, 115, 125),
+                Image = FromRGB(45, 35, 40),
+                Border = FromRGB(232, 218, 224),
+                DarkGradient = FromRGB(248, 242, 245),
+                Shadow = FromRGB(210, 195, 200)
+            },
+            ["Ivory Mint"] = {
+                Name = "Ivory Mint",
+                Background = FromRGB(242, 247, 244),
+                Inline = FromRGB(255, 255, 255),
+                Element = FromRGB(232, 242, 235),
+                Accent = FromRGB(38, 185, 125),
+                Text = FromRGB(25, 35, 28),
+                InactiveText = FromRGB(115, 135, 120),
+                Image = FromRGB(35, 48, 38),
+                Border = FromRGB(218, 232, 222),
+                DarkGradient = FromRGB(242, 247, 244),
+                Shadow = FromRGB(190, 205, 195)
             },
             ["Midnight"] = {
                 Name = "Midnight",
@@ -12731,10 +12796,49 @@ local Library do
                 Border = FromRGB(50, 32, 35),
                 DarkGradient = FromRGB(220, 180, 180),
                 Shadow = FromRGB(0, 0, 0)
+            },
+            ["Emerald"] = {
+                Name = "Emerald",
+                Background = FromRGB(15, 20, 18),
+                Inline = FromRGB(20, 28, 25),
+                Element = FromRGB(28, 40, 35),
+                Accent = FromRGB(46, 204, 113),
+                Text = FromRGB(220, 225, 222),
+                InactiveText = FromRGB(145, 160, 150),
+                Image = FromRGB(220, 225, 222),
+                Border = FromRGB(30, 45, 38),
+                DarkGradient = FromRGB(200, 215, 205),
+                Shadow = FromRGB(0, 0, 0)
+            },
+            ["Amethyst"] = {
+                Name = "Amethyst",
+                Background = FromRGB(18, 15, 24),
+                Inline = FromRGB(25, 20, 35),
+                Element = FromRGB(38, 30, 52),
+                Accent = FromRGB(170, 130, 255),
+                Text = FromRGB(225, 220, 230),
+                InactiveText = FromRGB(155, 145, 165),
+                Image = FromRGB(225, 220, 230),
+                Border = FromRGB(44, 34, 60),
+                DarkGradient = FromRGB(210, 200, 220),
+                Shadow = FromRGB(0, 0, 0)
+            },
+            ["One Tap"] = {
+                Name = "One Tap",
+                Background = FromRGB(51, 51, 51),
+                Inline = FromRGB(30, 30, 30),
+                Element = FromRGB(45, 45, 45),
+                Accent = FromRGB(237, 170, 0),
+                Text = FromRGB(245, 245, 245),
+                InactiveText = FromRGB(185, 185, 185),
+                Image = FromRGB(255, 255, 255),
+                Border = FromRGB(38, 38, 38),
+                DarkGradient = FromRGB(211, 211, 211),
+                Shadow = FromRGB(0, 0, 0)
             }
         },
         ThemeOrder = {
-            "Merqury Hub", "Classic Merqury", "Aqua", "Halloween", "One Tap", "Pearl", "Midnight", "Crimson"
+            "Merqury", "Classic Merqury", "Merqury Light", "Pearl", "Glacier", "Rose Quartz", "Ivory Mint", "Midnight", "Crimson", "Emerald", "Amethyst", "One Tap"
         }
     }
 
@@ -12824,7 +12928,7 @@ local Library do
             Name = "\0",
             AnchorPoint = Vector2New(0.5, 0.5),
             Position = UDim2New(0.5, 0, 0.5, 0),
-            Size = UDim2New(0, 510, 0, 310),
+            Size = UDim2New(0, 520, 0, 360),
             ZIndex = 120,
             BorderSizePixel = 0,
             BackgroundColor3 = Library.Theme.Background
@@ -12902,7 +13006,8 @@ local Library do
             Position = UDim2New(0, 10, 0, 42),
             Size = UDim2New(1, -20, 1, -50),
             ScrollBarThickness = 3,
-            CanvasSize = UDim2New(0, 0, 0, 255),
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            CanvasSize = UDim2New(0, 0, 0, 0),
             ScrollBarImageColor3 = Library.Theme.Accent,
             ZIndex = 121
         })  Scroll:AddToTheme({ScrollBarImageColor3 = "Accent"})
@@ -12910,7 +13015,7 @@ local Library do
         local Grid = Instances:Create("UIGridLayout", {
             Parent = Scroll.Instance,
             Name = "\0",
-            CellSize = UDim2New(0, 152, 0, 72),
+            CellSize = UDim2New(0, 154, 0, 72),
             CellPadding = UDim2New(0, 12, 0, 10),
             SortOrder = Enum.SortOrder.LayoutOrder
         })
@@ -12948,7 +13053,7 @@ local Library do
                     Parent = Card.Instance,
                     Name = "\0",
                     Position = UDim2New(0, 5, 0, 5),
-                    Size = UDim2New(1, -10, 0, 36),
+                    Size = UDim2New(1, -10, 0, 38),
                     BorderSizePixel = 0,
                     ClipsDescendants = true,
                     ZIndex = 123,
@@ -12960,17 +13065,7 @@ local Library do
                     CornerRadius = UDimNew(0, 4)
                 })
 
-                local AccentBar = Instances:Create("Frame", {
-                    Parent = PreviewBox.Instance,
-                    Name = "\0",
-                    Position = UDim2New(0, 0, 0, 0),
-                    Size = UDim2New(1, 0, 0, 2),
-                    BorderSizePixel = 0,
-                    ZIndex = 124,
-                    BackgroundColor3 = themeDef.Accent
-                })
-
-                local PreviewGlow = Instances:Create("Frame", {
+                local PreviewGradFrame = Instances:Create("Frame", {
                     Parent = PreviewBox.Instance,
                     Name = "\0",
                     Size = UDim2New(1, 0, 1, 0),
@@ -12979,17 +13074,17 @@ local Library do
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })
                 Instances:Create("UIGradient", {
-                    Parent = PreviewGlow.Instance,
+                    Parent = PreviewGradFrame.Instance,
                     Name = "\0",
                     Rotation = 0,
                     Color = RGBSequence{
                         RGBSequenceKeypoint(0, themeDef.Accent),
-                        RGBSequenceKeypoint(0.45, themeDef.Element),
+                        RGBSequenceKeypoint(0.5, themeDef.Element),
                         RGBSequenceKeypoint(1, themeDef.Background)
                     },
                     Transparency = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 0.45),
-                        NumberSequenceKeypoint.new(1, 0.92)
+                        NumberSequenceKeypoint.new(0, 0.22),
+                        NumberSequenceKeypoint.new(1, 0.85)
                     })
                 })
 
@@ -12997,7 +13092,7 @@ local Library do
                     Parent = PreviewBox.Instance,
                     Name = "\0",
                     AnchorPoint = Vector2New(1, 0.5),
-                    Position = UDim2New(1, -5, 0.5, 0),
+                    Position = UDim2New(1, -6, 0.5, 0),
                     Size = UDim2New(0, 14, 0, 14),
                     BorderSizePixel = 0,
                     Visible = isCurrent,
@@ -13026,7 +13121,7 @@ local Library do
                     TextSize = 13,
                     TextColor3 = isCurrent and themeDef.Accent or Library.Theme.Text,
                     AnchorPoint = Vector2New(0, 0),
-                    Position = UDim2New(0, 7, 0, 46),
+                    Position = UDim2New(0, 7, 0, 48),
                     Size = UDim2New(1, -14, 0, 20),
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment.Left,
