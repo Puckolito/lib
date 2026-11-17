@@ -167,21 +167,77 @@ local Options, MiscOptions do
         end
     end
 
-    local safeEspGuiParent
-    do
-        local ok, rGui = pcall(function()
-            return CoreGui:FindFirstChild("RobloxGui") or CoreGui.RobloxGui
+    local function GetSafeGuiParent()
+        local rGui
+        pcall(function()
+            rGui = CoreGui:FindFirstChild("RobloxGui") or CoreGui.RobloxGui
         end)
-        if ok and rGui then
-            safeEspGuiParent = rGui
-        else
-            safeEspGuiParent = CoreGui
+
+        if rGui then
+            local testOk = false
+            pcall(function()
+                local t = Instance.new("ScreenGui")
+                t.Parent = rGui
+                testOk = (t.Parent == rGui)
+                t:Destroy()
+            end)
+            if testOk then
+                return rGui
+            end
         end
+
+        local okHui, hui = pcall(function()
+            return typeof(gethui) == "function" and gethui()
+        end)
+        if okHui and hui then
+            return hui
+        end
+
+        local okCore, cGui = pcall(function()
+            return CoreGui
+        end)
+        if okCore and cGui then
+            return cGui
+        end
+
+        local okPlr, pGui = pcall(function()
+            local lp = game:GetService("Players").LocalPlayer
+            return lp and (lp:FindFirstChild("PlayerGui") or lp:WaitForChild("PlayerGui", 2))
+        end)
+        if okPlr and pGui then
+            return pGui
+        end
+
+        return CoreGui
     end
+
+    local safeEspGuiParent = GetSafeGuiParent()
+    local espScreenGui, espCache
+    pcall(function()
+        espScreenGui = Instance.new("ScreenGui")
+        espScreenGui.Parent = safeEspGuiParent
+        espCache = Instance.new("ScreenGui")
+        espCache.Parent = safeEspGuiParent
+    end)
+    if not (espScreenGui and espScreenGui.Parent) then
+        pcall(function()
+            espScreenGui = Instance.new("ScreenGui", CoreGui)
+            espCache = Instance.new("ScreenGui", CoreGui)
+        end)
+    end
+    if not (espScreenGui and espScreenGui.Parent) then
+        pcall(function()
+            local lp = game:GetService("Players").LocalPlayer
+            local pGui = lp and (lp:FindFirstChild("PlayerGui") or lp:WaitForChild("PlayerGui", 2))
+            espScreenGui = Instance.new("ScreenGui", pGui or CoreGui)
+            espCache = Instance.new("ScreenGui", pGui or CoreGui)
+        end)
+    end
+
     getgenv().Esp = {
         Players = {},
-        ScreenGui = Instance.new("ScreenGui", safeEspGuiParent),
-        Cache = Instance.new("ScreenGui", safeEspGuiParent),
+        ScreenGui = espScreenGui,
+        Cache = espCache,
         Connections = {},
     }; do
         Esp.ScreenGui.IgnoreGuiInset = true
@@ -2280,17 +2336,7 @@ local Library do
         end
     end)
 
-    local safeLibGuiParent
-    do
-        local ok, rGui = pcall(function()
-            return CoreGui:FindFirstChild("RobloxGui") or CoreGui.RobloxGui
-        end)
-        if ok and rGui then
-            safeLibGuiParent = rGui
-        else
-            safeLibGuiParent = CoreGui
-        end
-    end
+    local safeLibGuiParent = GetSafeGuiParent()
 
     Library.Holder = Instances:Create("ScreenGui", {
         Parent = safeLibGuiParent,
@@ -2302,13 +2348,36 @@ local Library do
     })
     Library.ScreenGui = Library.Holder.Instance
 
+    if not (Library.Holder and Library.Holder.Instance and Library.Holder.Instance.Parent) then
+        pcall(function()
+            if typeof(gethui) == "function" then
+                Library.Holder.Instance.Parent = gethui()
+            end
+        end)
+        if not Library.Holder.Instance.Parent then
+            pcall(function() Library.Holder.Instance.Parent = CoreGui end)
+        end
+        if not Library.Holder.Instance.Parent then
+            pcall(function()
+                local lp = game:GetService("Players").LocalPlayer
+                Library.Holder.Instance.Parent = lp and (lp:FindFirstChild("PlayerGui") or lp:WaitForChild("PlayerGui", 3))
+            end)
+        end
+    end
+
     Library.UnusedHolder = Instances:Create("ScreenGui", {
-        Parent = safeLibGuiParent,
+        Parent = (Library.Holder and Library.Holder.Instance and Library.Holder.Instance.Parent) or safeLibGuiParent,
         Name = "\0",
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Enabled = false,
         ResetOnSpawn = false
     })
+
+    if not (Library.UnusedHolder and Library.UnusedHolder.Instance and Library.UnusedHolder.Instance.Parent) then
+        pcall(function()
+            Library.UnusedHolder.Instance.Parent = Library.Holder.Instance.Parent
+        end)
+    end
 
     Library.NotifHolder = Instances:Create("Frame", {
         Parent = Library.Holder.Instance,
