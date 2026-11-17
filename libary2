@@ -12707,11 +12707,19 @@ local Library do
             return NewGradient
         end
     end
-end
 
-getgenv().Library = Library
-
-local httpService = game:GetService("HttpService")
+    local FromRGB = FromRGB or Color3.fromRGB
+    local FromHSV = FromHSV or Color3.fromHSV
+    local FromHex = FromHex or Color3.fromHex
+    local UDim2New = UDim2New or UDim2.new
+    local UDimNew = UDimNew or UDim.new
+    local Vector2New = Vector2New or Vector2.new
+    local RGBSequence = RGBSequence or ColorSequence.new
+    local RGBSequenceKeypoint = RGBSequenceKeypoint or ColorSequenceKeypoint.new
+    local NumSequence = NumSequence or NumberSequence.new
+    local NumSequenceKeypoint = NumSequenceKeypoint or NumberSequenceKeypoint.new
+    local RunService = RunService or game:GetService("RunService")
+    local HttpService = HttpService or game:GetService("HttpService")
 
     local ThemeManager = {
         Library = Library,
@@ -13416,6 +13424,13 @@ local httpService = game:GetService("HttpService")
 
     Library.ThemeManager = ThemeManager
     getgenv().ThemeManager = ThemeManager
+end
+
+getgenv().Library = Library
+
+local httpService = game:GetService("HttpService")
+
+
 
 local SaveManager = {} do
     SaveManager.Folder = "MerquryHub"
