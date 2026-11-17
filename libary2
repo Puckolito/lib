@@ -167,7 +167,17 @@ local Options, MiscOptions do
         end
     end
 
-    local safeEspGuiParent = CoreGui
+    local safeEspGuiParent
+    do
+        local ok, rGui = pcall(function()
+            return CoreGui:FindFirstChild("RobloxGui") or CoreGui.RobloxGui
+        end)
+        if ok and rGui then
+            safeEspGuiParent = rGui
+        else
+            safeEspGuiParent = CoreGui
+        end
+    end
     getgenv().Esp = {
         Players = {},
         ScreenGui = Instance.new("ScreenGui", safeEspGuiParent),
@@ -2270,7 +2280,17 @@ local Library do
         end
     end)
 
-    local safeLibGuiParent = CoreGui
+    local safeLibGuiParent
+    do
+        local ok, rGui = pcall(function()
+            return CoreGui:FindFirstChild("RobloxGui") or CoreGui.RobloxGui
+        end)
+        if ok and rGui then
+            safeLibGuiParent = rGui
+        else
+            safeLibGuiParent = CoreGui
+        end
+    end
 
     Library.Holder = Instances:Create("ScreenGui", {
         Parent = safeLibGuiParent,
@@ -12902,10 +12922,7 @@ local Library do
 
         for name, card in pairs(self.CardElements) do
             local isSelected = (name == themeName)
-            if card.Radio and card.Radio.Instance then
-                card.Radio.Instance.Visible = isSelected
-                card.Radio.Instance.BackgroundColor3 = def.Accent
-            end
+
             if card.Title and card.Title.Instance then
                 if shouldAnimate then
                     TweenService:Create(card.Title.Instance, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
@@ -13106,30 +13123,7 @@ local Library do
                     })
                 })
 
-                local ActiveBadge = Instances:Create("Frame", {
-                    Parent = PreviewBox.Instance,
-                    Name = "\0",
-                    AnchorPoint = Vector2New(1, 0.5),
-                    Position = UDim2New(1, -6, 0.5, 0),
-                    Size = UDim2New(0, 14, 0, 14),
-                    BorderSizePixel = 0,
-                    Visible = isCurrent,
-                    ZIndex = 125,
-                    BackgroundColor3 = themeDef.Accent
-                })
-                Instances:Create("UICorner", { Parent = ActiveBadge.Instance, CornerRadius = UDimNew(1, 0) })
 
-                local CheckText = Instances:Create("TextLabel", {
-                    Parent = ActiveBadge.Instance,
-                    Name = "\0",
-                    FontFace = Library.Font,
-                    Text = "✓",
-                    TextSize = 9,
-                    TextColor3 = FromRGB(255, 255, 255),
-                    Size = UDim2New(1, 0, 1, 0),
-                    BackgroundTransparency = 1,
-                    ZIndex = 126
-                })
 
                 local CardTitle = Instances:Create("TextLabel", {
                     Parent = Card.Instance,
@@ -13150,7 +13144,6 @@ local Library do
                 self.CardElements[themeKey] = {
                     Card = Card,
                     Stroke = CardStroke,
-                    Radio = ActiveBadge,
                     Title = CardTitle
                 }
 
