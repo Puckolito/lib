@@ -2112,7 +2112,7 @@ local Library do
             ["Border"] = FromRGB(32, 36, 42)
         },
 
-        ["Merqury Light"] = {
+        ["Light"] = {
             ["Background"] = FromRGB(242, 244, 248),
             ["Inline"] = FromRGB(255, 255, 255),
             ["Shadow"] = FromRGB(190, 195, 210),
@@ -2138,7 +2138,7 @@ local Library do
             ["Border"] = FromRGB(218, 224, 234)
         },
 
-        ["Glacier"] = {
+        ["Ice"] = {
             ["Background"] = FromRGB(240, 244, 250),
             ["Inline"] = FromRGB(255, 255, 255),
             ["Shadow"] = FromRGB(190, 200, 215),
@@ -2151,7 +2151,7 @@ local Library do
             ["Border"] = FromRGB(215, 225, 238)
         },
 
-        ["Rose Quartz"] = {
+        ["Rose"] = {
             ["Background"] = FromRGB(248, 242, 245),
             ["Inline"] = FromRGB(255, 255, 255),
             ["Shadow"] = FromRGB(210, 195, 200),
@@ -2164,7 +2164,7 @@ local Library do
             ["Border"] = FromRGB(232, 218, 224)
         },
 
-        ["Ivory Mint"] = {
+        ["Mint"] = {
             ["Background"] = FromRGB(242, 247, 244),
             ["Inline"] = FromRGB(255, 255, 255),
             ["Shadow"] = FromRGB(190, 205, 195),
@@ -2177,7 +2177,7 @@ local Library do
             ["Border"] = FromRGB(218, 232, 222)
         },
 
-        ["Midnight"] = {
+        ["Blue"] = {
             ["Background"] = FromRGB(10, 14, 22),
             ["Inline"] = FromRGB(16, 22, 34),
             ["Shadow"] = FromRGB(0, 0, 0),
@@ -2190,7 +2190,7 @@ local Library do
             ["Border"] = FromRGB(22, 35, 55)
         },
 
-        ["Crimson"] = {
+        ["Red"] = {
             ["Background"] = FromRGB(20, 15, 16),
             ["Inline"] = FromRGB(28, 20, 22),
             ["Shadow"] = FromRGB(0, 0, 0),
@@ -2203,7 +2203,7 @@ local Library do
             ["Border"] = FromRGB(50, 32, 35)
         },
 
-        ["Emerald"] = {
+        ["Green"] = {
             ["Background"] = FromRGB(15, 20, 18),
             ["Inline"] = FromRGB(20, 28, 25),
             ["Shadow"] = FromRGB(0, 0, 0),
@@ -2216,7 +2216,7 @@ local Library do
             ["Border"] = FromRGB(30, 45, 38)
         },
 
-        ["Amethyst"] = {
+        ["Purple"] = {
             ["Background"] = FromRGB(18, 15, 24),
             ["Inline"] = FromRGB(25, 20, 35),
             ["Shadow"] = FromRGB(0, 0, 0),
@@ -2242,6 +2242,15 @@ local Library do
             ["Border"] = FromRGB(38, 38, 38)
         },
     }
+
+    Themes["Merqury Light"] = Themes["Light"]
+    Themes["Glacier"] = Themes["Ice"]
+    Themes["Rose Quartz"] = Themes["Rose"]
+    Themes["Ivory Mint"] = Themes["Mint"]
+    Themes["Midnight"] = Themes["Blue"]
+    Themes["Crimson"] = Themes["Red"]
+    Themes["Emerald"] = Themes["Green"]
+    Themes["Amethyst"] = Themes["Purple"]
 
     Themes["Bronze"] = TableClone(Themes["Preset"])
     Themes["Burnt Bronze"] = TableClone(Themes["Preset"])
@@ -12706,8 +12715,8 @@ local Library do
                 DarkGradient = FromRGB(211, 211, 211),
                 Shadow = FromRGB(0, 0, 0)
             },
-            ["Merqury Light"] = {
-                Name = "Merqury Light",
+            ["Light"] = {
+                Name = "Light",
                 Background = FromRGB(242, 244, 248),
                 Inline = FromRGB(255, 255, 255),
                 Element = FromRGB(232, 236, 244),
@@ -12732,8 +12741,8 @@ local Library do
                 DarkGradient = FromRGB(242, 244, 248),
                 Shadow = FromRGB(190, 195, 210)
             },
-            ["Glacier"] = {
-                Name = "Glacier",
+            ["Ice"] = {
+                Name = "Ice",
                 Background = FromRGB(240, 244, 250),
                 Inline = FromRGB(255, 255, 255),
                 Element = FromRGB(230, 238, 246),
@@ -12745,8 +12754,8 @@ local Library do
                 DarkGradient = FromRGB(240, 244, 250),
                 Shadow = FromRGB(190, 200, 215)
             },
-            ["Rose Quartz"] = {
-                Name = "Rose Quartz",
+            ["Rose"] = {
+                Name = "Rose",
                 Background = FromRGB(248, 242, 245),
                 Inline = FromRGB(255, 255, 255),
                 Element = FromRGB(242, 232, 236),
@@ -12758,8 +12767,8 @@ local Library do
                 DarkGradient = FromRGB(248, 242, 245),
                 Shadow = FromRGB(210, 195, 200)
             },
-            ["Ivory Mint"] = {
-                Name = "Ivory Mint",
+            ["Mint"] = {
+                Name = "Mint",
                 Background = FromRGB(242, 247, 244),
                 Inline = FromRGB(255, 255, 255),
                 Element = FromRGB(232, 242, 235),
@@ -12771,8 +12780,8 @@ local Library do
                 DarkGradient = FromRGB(242, 247, 244),
                 Shadow = FromRGB(190, 205, 195)
             },
-            ["Midnight"] = {
-                Name = "Midnight",
+            ["Blue"] = {
+                Name = "Blue",
                 Background = FromRGB(10, 14, 22),
                 Inline = FromRGB(16, 22, 34),
                 Element = FromRGB(24, 34, 52),
@@ -12784,8 +12793,8 @@ local Library do
                 DarkGradient = FromRGB(180, 205, 235),
                 Shadow = FromRGB(0, 0, 0)
             },
-            ["Crimson"] = {
-                Name = "Crimson",
+            ["Red"] = {
+                Name = "Red",
                 Background = FromRGB(20, 15, 16),
                 Inline = FromRGB(28, 20, 22),
                 Element = FromRGB(42, 30, 33),
@@ -12797,8 +12806,8 @@ local Library do
                 DarkGradient = FromRGB(220, 180, 180),
                 Shadow = FromRGB(0, 0, 0)
             },
-            ["Emerald"] = {
-                Name = "Emerald",
+            ["Green"] = {
+                Name = "Green",
                 Background = FromRGB(15, 20, 18),
                 Inline = FromRGB(20, 28, 25),
                 Element = FromRGB(28, 40, 35),
@@ -12810,8 +12819,8 @@ local Library do
                 DarkGradient = FromRGB(200, 215, 205),
                 Shadow = FromRGB(0, 0, 0)
             },
-            ["Amethyst"] = {
-                Name = "Amethyst",
+            ["Purple"] = {
+                Name = "Purple",
                 Background = FromRGB(18, 15, 24),
                 Inline = FromRGB(25, 20, 35),
                 Element = FromRGB(38, 30, 52),
@@ -12838,9 +12847,18 @@ local Library do
             }
         },
         ThemeOrder = {
-            "Merqury", "Classic Merqury", "Merqury Light", "Pearl", "Glacier", "Rose Quartz", "Ivory Mint", "Midnight", "Crimson", "Emerald", "Amethyst", "One Tap"
+            "Merqury", "Classic Merqury", "Light", "Pearl", "Ice", "Rose", "Mint", "Blue", "Red", "Green", "Purple", "One Tap"
         }
     }
+
+    ThemeManager.ThemeDefinitions["Merqury Light"] = ThemeManager.ThemeDefinitions["Light"]
+    ThemeManager.ThemeDefinitions["Glacier"] = ThemeManager.ThemeDefinitions["Ice"]
+    ThemeManager.ThemeDefinitions["Rose Quartz"] = ThemeManager.ThemeDefinitions["Rose"]
+    ThemeManager.ThemeDefinitions["Ivory Mint"] = ThemeManager.ThemeDefinitions["Mint"]
+    ThemeManager.ThemeDefinitions["Midnight"] = ThemeManager.ThemeDefinitions["Blue"]
+    ThemeManager.ThemeDefinitions["Crimson"] = ThemeManager.ThemeDefinitions["Red"]
+    ThemeManager.ThemeDefinitions["Emerald"] = ThemeManager.ThemeDefinitions["Green"]
+    ThemeManager.ThemeDefinitions["Amethyst"] = ThemeManager.ThemeDefinitions["Purple"]
 
     function ThemeManager:SetLibrary(lib)
         self.Library = lib
