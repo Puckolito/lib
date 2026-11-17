@@ -2077,13 +2077,104 @@ local Library do
             ["Background"] = FromRGB(16, 18, 21),
             ["Inline"] = FromRGB(22, 25, 29),
             ["Shadow"] = FromRGB(0, 0, 0),
-            ["Text"] = FromRGB(255, 255, 255),
-            ["Image"] = FromRGB(255, 255, 255),
+            ["Text"] = FromRGB(220, 222, 226),
+            ["Image"] = FromRGB(220, 222, 226),
             ["Dark Gradient"] = FromRGB(211, 211, 211),
-            ["Inactive Text"] = FromRGB(185, 185, 185),
+            ["Inactive Text"] = FromRGB(150, 155, 165),
             ["Element"] = FromRGB(34, 39, 45),
             ["Accent"] = FromRGB(225, 115, 52),
             ["Border"] = FromRGB(32, 36, 42)
+        },
+
+        ["Merqury Hub"] = {
+            ["Background"] = FromRGB(16, 18, 21),
+            ["Inline"] = FromRGB(22, 25, 29),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(220, 222, 226),
+            ["Image"] = FromRGB(220, 222, 226),
+            ["Dark Gradient"] = FromRGB(211, 211, 211),
+            ["Inactive Text"] = FromRGB(150, 155, 165),
+            ["Element"] = FromRGB(34, 39, 45),
+            ["Accent"] = FromRGB(225, 115, 52),
+            ["Border"] = FromRGB(32, 36, 42)
+        },
+
+        ["Classic Merqury"] = {
+            ["Background"] = FromRGB(16, 18, 21),
+            ["Inline"] = FromRGB(22, 25, 29),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(220, 222, 226),
+            ["Image"] = FromRGB(220, 222, 226),
+            ["Dark Gradient"] = FromRGB(211, 211, 211),
+            ["Inactive Text"] = FromRGB(150, 155, 165),
+            ["Element"] = FromRGB(34, 39, 45),
+            ["Accent"] = FromRGB(155, 89, 210),
+            ["Border"] = FromRGB(32, 36, 42)
+        },
+
+        ["Midnight Cyan"] = {
+            ["Background"] = FromRGB(14, 18, 24),
+            ["Inline"] = FromRGB(20, 26, 34),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(220, 225, 235),
+            ["Image"] = FromRGB(220, 225, 235),
+            ["Dark Gradient"] = FromRGB(200, 210, 220),
+            ["Inactive Text"] = FromRGB(145, 155, 170),
+            ["Element"] = FromRGB(28, 38, 50),
+            ["Accent"] = FromRGB(0, 210, 255),
+            ["Border"] = FromRGB(30, 42, 56)
+        },
+
+        ["Emerald"] = {
+            ["Background"] = FromRGB(15, 20, 18),
+            ["Inline"] = FromRGB(20, 28, 25),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(220, 225, 222),
+            ["Image"] = FromRGB(220, 225, 222),
+            ["Dark Gradient"] = FromRGB(200, 215, 205),
+            ["Inactive Text"] = FromRGB(145, 160, 150),
+            ["Element"] = FromRGB(28, 40, 35),
+            ["Accent"] = FromRGB(46, 204, 113),
+            ["Border"] = FromRGB(30, 45, 38)
+        },
+
+        ["Crimson"] = {
+            ["Background"] = FromRGB(20, 15, 16),
+            ["Inline"] = FromRGB(28, 20, 22),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(225, 220, 220),
+            ["Image"] = FromRGB(225, 220, 220),
+            ["Dark Gradient"] = FromRGB(215, 200, 200),
+            ["Inactive Text"] = FromRGB(160, 145, 145),
+            ["Element"] = FromRGB(42, 30, 33),
+            ["Accent"] = FromRGB(235, 60, 60),
+            ["Border"] = FromRGB(48, 32, 36)
+        },
+
+        ["Cyberpunk Gold"] = {
+            ["Background"] = FromRGB(18, 18, 16),
+            ["Inline"] = FromRGB(26, 25, 20),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(225, 224, 218),
+            ["Image"] = FromRGB(225, 224, 218),
+            ["Dark Gradient"] = FromRGB(215, 210, 195),
+            ["Inactive Text"] = FromRGB(160, 155, 140),
+            ["Element"] = FromRGB(38, 36, 28),
+            ["Accent"] = FromRGB(241, 196, 15),
+            ["Border"] = FromRGB(44, 40, 30)
+        },
+
+        ["Amethyst Night"] = {
+            ["Background"] = FromRGB(18, 15, 24),
+            ["Inline"] = FromRGB(25, 20, 35),
+            ["Shadow"] = FromRGB(0, 0, 0),
+            ["Text"] = FromRGB(225, 220, 230),
+            ["Image"] = FromRGB(225, 220, 230),
+            ["Dark Gradient"] = FromRGB(210, 200, 220),
+            ["Inactive Text"] = FromRGB(155, 145, 165),
+            ["Element"] = FromRGB(38, 30, 52),
+            ["Accent"] = FromRGB(168, 85, 247),
+            ["Border"] = FromRGB(44, 34, 60)
         },
 
         ["Halloween"] = {
@@ -2556,6 +2647,30 @@ local Library do
         end
     end
 
+    Library.SetTheme = function(self, Theme)
+        local TargetTheme
+        if type(Theme) == "string" then
+            TargetTheme = self.Themes[Theme] or self.Themes[string.lower(Theme)]
+            if not TargetTheme then
+                for k, v in pairs(self.Themes) do
+                    if string.lower(k) == string.lower(Theme) then
+                        TargetTheme = v
+                        break
+                    end
+                end
+            end
+        elseif type(Theme) == "table" then
+            TargetTheme = Theme
+        end
+
+        if not TargetTheme then return false end
+
+        for Property, Color in pairs(TargetTheme) do
+            self:ChangeTheme(Property, Color)
+        end
+        return true
+    end
+
     Library.IsMouseOverFrame = function(self, Frame, XOffset, YOffset)
         if not Frame then return false end
         if typeof(Frame) == "Instance" then
@@ -2962,17 +3077,17 @@ local Library do
                 Items["OpenIcon"] = Instances:Create("ImageLabel", {
                     Parent = Items["RealDropdown"].Instance,
                     Name = "\0",
-                    ImageColor3 = FromRGB(255, 255, 255),
+                    ImageColor3 = FromRGB(150, 155, 165),
                     AnchorPoint = Vector2New(1, 0.5),
                     Size = UDim2New(0, 16, 0, 16),
                     Position = UDim2New(1, -6, 0.5, 0),
-                    Image = "",
-                    Visible = false,
+                    Image = "rbxassetid://10709790948",
+                    Visible = true,
                     BackgroundTransparency = 1,
                     ZIndex = 3,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
-                })  Items["OpenIcon"]:AddToTheme({ImageColor3 = "Accent"})
+                })  Items["OpenIcon"]:AddToTheme({ImageColor3 = "Inactive Text"})
 
                 Items["Holder"] = Instances:Create("Frame", {
                     Parent = Items["Dropdown"].Instance,
@@ -3268,6 +3383,7 @@ local Library do
                     Items["Holder"].Instance.Visible = true
                     Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
                     Items["Holder"].Instance.ZIndex = 50
+                    Items["OpenIcon"]:Tween(nil, { Rotation = 180, ImageColor3 = Library.Theme.Accent })
 
                     local function UpdateDropdownPos()
                         local realDropdown = Items["RealDropdown"].Instance
@@ -3314,6 +3430,7 @@ local Library do
                     Library.OpenFrames[_ddKey] = Dropdown
                 else
                     Items["Holder"].Instance.Visible = false
+                    Items["OpenIcon"]:Tween(nil, { Rotation = 0, ImageColor3 = Library.Theme["Inactive Text"] })
                     local _ddKey = Data.Flag or Data.Name or "Dropdown"
                     if Library.OpenFrames[_ddKey] then
                         Library.OpenFrames[_ddKey] = nil
@@ -3419,6 +3536,535 @@ local Library do
             end
 
             return Dropdown, Items
+        end
+
+        Components.PriorityList = function(Data)
+            local PriorityList = {
+                Value = {},
+                Order = {},
+                States = {},
+                Flag = Data.Flag,
+                Type = "PriorityList",
+                Name = Data.Name,
+                IsOpen = false,
+                RowObjects = {}
+            }
+
+            local RawItems = Data.Items or {}
+            for _, item in ipairs(RawItems) do
+                table.insert(PriorityList.Order, tostring(item))
+                PriorityList.States[tostring(item)] = true
+            end
+
+            local Items = {} do
+                Items["PriorityList"] = Instances:Create("Frame", {
+                    Parent = Data.Parent.Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, 0, 0, 47),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    ZIndex = 2,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+
+                Items["Text"] = Instances:Create("TextLabel", {
+                    Parent = Items["PriorityList"].Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    TextColor3 = FromRGB(220, 222, 226),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    Text = Data.Name,
+                    AutomaticSize = Enum.AutomaticSize.X,
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(0, 0, 0, 15),
+                    BorderSizePixel = 0,
+                    ZIndex = 2,
+                    TextSize = 14,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
+
+                Items["RealButton"] = Instances:Create("TextButton", {
+                    Parent = Items["PriorityList"].Instance,
+                    Text = "",
+                    AutoButtonColor = false,
+                    Name = "\0",
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    AnchorPoint = Vector2New(0, 1),
+                    Position = UDim2New(0, 0, 1, 0),
+                    Size = UDim2New(1, 0, 0, 25),
+                    ZIndex = 2,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(34, 39, 45)
+                })  Items["RealButton"]:AddToTheme({BackgroundColor3 = "Element"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["RealButton"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 5)
+                })
+
+                Items["Value"] = Instances:Create("TextLabel", {
+                    Parent = Items["RealButton"].Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    TextColor3 = FromRGB(220, 222, 226),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    Text = "--",
+                    AnchorPoint = Vector2New(0, 0.5),
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, -35, 0, 15),
+                    Position = UDim2New(0, 8, 0.5, 0),
+                    BorderSizePixel = 0,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    ZIndex = 3,
+                    TextSize = 14,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })  Items["Value"]:AddToTheme({TextColor3 = "Text"})
+
+                Items["OpenIcon"] = Instances:Create("ImageLabel", {
+                    Parent = Items["RealButton"].Instance,
+                    Name = "\0",
+                    ImageColor3 = FromRGB(150, 155, 165),
+                    AnchorPoint = Vector2New(1, 0.5),
+                    Size = UDim2New(0, 16, 0, 16),
+                    Position = UDim2New(1, -6, 0.5, 0),
+                    Image = "rbxassetid://10709790948",
+                    Visible = true,
+                    BackgroundTransparency = 1,
+                    ZIndex = 3,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })  Items["OpenIcon"]:AddToTheme({ImageColor3 = "Inactive Text"})
+
+                Items["Holder"] = Instances:Create("Frame", {
+                    Parent = Items["PriorityList"].Instance,
+                    Name = "\0",
+                    AnchorPoint = Vector2New(0, 0),
+                    BackgroundTransparency = 0,
+                    ClipsDescendants = true,
+                    Position = UDim2New(0, 0, 1, 5),
+                    Size = UDim2New(1, 0, 0, 0),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    ZIndex = 50,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(22, 25, 29)
+                })  Items["Holder"]:AddToTheme({BackgroundColor3 = "Inline"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["Holder"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 5)
+                })
+
+                Instances:Create("UIListLayout", {
+                    Parent = Items["Holder"].Instance,
+                    Name = "\0",
+                    Padding = UDimNew(0, 3),
+                    SortOrder = Enum.SortOrder.LayoutOrder
+                })
+
+                Instances:Create("UIPadding", {
+                    Parent = Items["Holder"].Instance,
+                    Name = "\0",
+                    PaddingTop = UDimNew(0, 4),
+                    PaddingBottom = UDimNew(0, 4),
+                    PaddingLeft = UDimNew(0, 3),
+                    PaddingRight = UDimNew(0, 3)
+                })
+            end
+
+            Items["RealButton"]:OnHover(function()
+                Items["RealButton"]:Tween(nil, {BackgroundColor3 = Library:GetLighterColor(Library.Theme.Element, 1.45)})
+            end)
+
+            Items["RealButton"]:OnHoverLeave(function()
+                Items["RealButton"]:Tween(nil, {BackgroundColor3 = Library.Theme.Element})
+            end)
+
+            local function UpdateSummaryAndValue()
+                local active = {}
+                for _, name in ipairs(PriorityList.Order) do
+                    if PriorityList.States[name] ~= false then
+                        table.insert(active, name)
+                    end
+                end
+                PriorityList.Value = active
+                Library.Flags[PriorityList.Flag] = active
+
+                if #active > 0 then
+                    Items["Value"].Instance.Text = table.concat(active, " > ")
+                else
+                    Items["Value"].Instance.Text = "--"
+                end
+
+                if Data.Callback then
+                    Library:SafeCall(Data.Callback, PriorityList.Value, PriorityList.Order, PriorityList.States)
+                end
+            end
+
+            local function RebuildRows()
+                for _, row in pairs(PriorityList.RowObjects) do
+                    if row.Frame and row.Frame.Clean then
+                        row.Frame:Clean()
+                    end
+                end
+                PriorityList.RowObjects = {}
+
+                for idx, itemName in ipairs(PriorityList.Order) do
+                    local isEnabled = (PriorityList.States[itemName] ~= false)
+
+                    local RowFrame = Instances:Create("Frame", {
+                        Parent = Items["Holder"].Instance,
+                        Name = "\0",
+                        Size = UDim2New(1, 0, 0, 26),
+                        LayoutOrder = idx,
+                        BorderSizePixel = 0,
+                        ZIndex = 51,
+                        BackgroundColor3 = FromRGB(16, 18, 21)
+                    })  RowFrame:AddToTheme({BackgroundColor3 = "Background"})
+                    Instances:Create("UICorner", {
+                        Parent = RowFrame.Instance,
+                        Name = "\0",
+                        CornerRadius = UDimNew(0, 4)
+                    })
+
+                    local CheckBtn = Instances:Create("TextButton", {
+                        Parent = RowFrame.Instance,
+                        Name = "\0",
+                        Text = "",
+                        AutoButtonColor = false,
+                        AnchorPoint = Vector2New(0, 0.5),
+                        Position = UDim2New(0, 5, 0.5, 0),
+                        Size = UDim2New(0, 16, 0, 16),
+                        BorderSizePixel = 0,
+                        ZIndex = 52,
+                        BackgroundColor3 = isEnabled and Library.Theme.Accent or Library.Theme.Element
+                    })  CheckBtn:AddToTheme({BackgroundColor3 = isEnabled and "Accent" or "Element"})
+                    Instances:Create("UICorner", {
+                        Parent = CheckBtn.Instance,
+                        Name = "\0",
+                        CornerRadius = UDimNew(0, 3)
+                    })
+
+                    local CheckIcon = Instances:Create("ImageLabel", {
+                        Parent = CheckBtn.Instance,
+                        Name = "\0",
+                        Image = "rbxassetid://116339777575852",
+                        AnchorPoint = Vector2New(0.5, 0.5),
+                        Position = UDim2New(0.5, 0, 0.5, 0),
+                        Size = UDim2New(0, 12, 0, 12),
+                        BackgroundTransparency = 1,
+                        ImageColor3 = FromRGB(0, 0, 0),
+                        ImageTransparency = isEnabled and 0 or 1,
+                        ZIndex = 53
+                    })
+
+                    local RankBadge = Instances:Create("Frame", {
+                        Parent = RowFrame.Instance,
+                        Name = "\0",
+                        AnchorPoint = Vector2New(0, 0.5),
+                        Position = UDim2New(0, 26, 0.5, 0),
+                        Size = UDim2New(0, 24, 0, 16),
+                        BorderSizePixel = 0,
+                        ZIndex = 52,
+                        BackgroundColor3 = FromRGB(34, 39, 45)
+                    })  RankBadge:AddToTheme({BackgroundColor3 = "Element"})
+                    Instances:Create("UICorner", {
+                        Parent = RankBadge.Instance,
+                        Name = "\0",
+                        CornerRadius = UDimNew(0, 3)
+                    })
+
+                    local RankLabel = Instances:Create("TextLabel", {
+                        Parent = RankBadge.Instance,
+                        Name = "\0",
+                        FontFace = Library.Font,
+                        Text = "#" .. tostring(idx),
+                        TextSize = 11,
+                        TextColor3 = isEnabled and Library.Theme.Accent or FromRGB(150, 155, 165),
+                        BackgroundTransparency = 1,
+                        Size = UDim2New(1, 0, 1, 0),
+                        ZIndex = 53
+                    })
+
+                    local NameLabel = Instances:Create("TextLabel", {
+                        Parent = RowFrame.Instance,
+                        Name = "\0",
+                        FontFace = Library.Font,
+                        Text = itemName,
+                        TextSize = 13,
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        TextColor3 = isEnabled and Library.Theme.Text or FromRGB(150, 155, 165),
+                        BackgroundTransparency = 1,
+                        AnchorPoint = Vector2New(0, 0.5),
+                        Position = UDim2New(0, 56, 0.5, 0),
+                        Size = UDim2New(1, -110, 0, 16),
+                        TextTruncate = Enum.TextTruncate.AtEnd,
+                        ZIndex = 52
+                    })
+
+                    local UpBtn = Instances:Create("TextButton", {
+                        Parent = RowFrame.Instance,
+                        Name = "\0",
+                        FontFace = Library.Font,
+                        Text = "▲",
+                        TextSize = 10,
+                        TextColor3 = (idx > 1) and Library.Theme.Text or FromRGB(100, 105, 115),
+                        AutoButtonColor = false,
+                        AnchorPoint = Vector2New(1, 0.5),
+                        Position = UDim2New(1, -26, 0.5, 0),
+                        Size = UDim2New(0, 20, 0, 18),
+                        BorderSizePixel = 0,
+                        ZIndex = 52,
+                        BackgroundColor3 = FromRGB(34, 39, 45)
+                    })  UpBtn:AddToTheme({BackgroundColor3 = "Element"})
+                    Instances:Create("UICorner", {
+                        Parent = UpBtn.Instance,
+                        Name = "\0",
+                        CornerRadius = UDimNew(0, 3)
+                    })
+
+                    local DownBtn = Instances:Create("TextButton", {
+                        Parent = RowFrame.Instance,
+                        Name = "\0",
+                        FontFace = Library.Font,
+                        Text = "▼",
+                        TextSize = 10,
+                        TextColor3 = (idx < #PriorityList.Order) and Library.Theme.Text or FromRGB(100, 105, 115),
+                        AutoButtonColor = false,
+                        AnchorPoint = Vector2New(1, 0.5),
+                        Position = UDim2New(1, -4, 0.5, 0),
+                        Size = UDim2New(0, 20, 0, 18),
+                        BorderSizePixel = 0,
+                        ZIndex = 52,
+                        BackgroundColor3 = FromRGB(34, 39, 45)
+                    })  DownBtn:AddToTheme({BackgroundColor3 = "Element"})
+                    Instances:Create("UICorner", {
+                        Parent = DownBtn.Instance,
+                        Name = "\0",
+                        CornerRadius = UDimNew(0, 3)
+                    })
+
+                    local function ToggleItemState()
+                        local current = (PriorityList.States[itemName] ~= false)
+                        local newState = not current
+                        PriorityList.States[itemName] = newState
+
+                        CheckBtn:ChangeItemTheme({BackgroundColor3 = newState and "Accent" or "Element"})
+                        CheckBtn:Tween(nil, {BackgroundColor3 = newState and Library.Theme.Accent or Library.Theme.Element})
+                        CheckIcon:Tween(nil, {ImageTransparency = newState and 0 or 1})
+                        RankLabel.TextColor3 = newState and Library.Theme.Accent or FromRGB(150, 155, 165)
+                        NameLabel.TextColor3 = newState and Library.Theme.Text or FromRGB(150, 155, 165)
+
+                        UpdateSummaryAndValue()
+                    end
+
+                    CheckBtn:Connect("MouseButton1Down", ToggleItemState)
+
+                    local function MoveUp()
+                        local currentIdx = table.find(PriorityList.Order, itemName)
+                        if currentIdx and currentIdx > 1 then
+                            table.remove(PriorityList.Order, currentIdx)
+                            table.insert(PriorityList.Order, currentIdx - 1, itemName)
+                            RebuildRows()
+                            UpdateSummaryAndValue()
+                        end
+                    end
+
+                    local function MoveDown()
+                        local currentIdx = table.find(PriorityList.Order, itemName)
+                        if currentIdx and currentIdx < #PriorityList.Order then
+                            table.remove(PriorityList.Order, currentIdx)
+                            table.insert(PriorityList.Order, currentIdx + 1, itemName)
+                            RebuildRows()
+                            UpdateSummaryAndValue()
+                        end
+                    end
+
+                    UpBtn:Connect("MouseButton1Down", MoveUp)
+                    DownBtn:Connect("MouseButton1Down", MoveDown)
+
+                    PriorityList.RowObjects[itemName] = {
+                        Frame = RowFrame,
+                        CheckBtn = CheckBtn,
+                        CheckIcon = CheckIcon,
+                        RankLabel = RankLabel,
+                        NameLabel = NameLabel
+                    }
+                end
+            end
+
+            function PriorityList:Get()
+                return PriorityList.Value
+            end
+
+            function PriorityList:GetOrder()
+                return PriorityList.Order
+            end
+
+            function PriorityList:GetStates()
+                return PriorityList.States
+            end
+
+            function PriorityList:Set(DataOrList)
+                if type(DataOrList) == "table" then
+                    if DataOrList.Order or DataOrList.States then
+                        if type(DataOrList.Order) == "table" then
+                            PriorityList.Order = table.clone(DataOrList.Order)
+                        end
+                        if type(DataOrList.States) == "table" then
+                            for k, v in pairs(DataOrList.States) do
+                                PriorityList.States[k] = (v == true)
+                            end
+                        end
+                    else
+                        local newOrder = {}
+                        local newStates = {}
+                        for _, v in ipairs(DataOrList) do
+                            table.insert(newOrder, tostring(v))
+                            newStates[tostring(v)] = true
+                        end
+                        for _, existing in ipairs(PriorityList.Order) do
+                            if not table.find(newOrder, existing) then
+                                table.insert(newOrder, existing)
+                                newStates[existing] = false
+                            end
+                        end
+                        PriorityList.Order = newOrder
+                        PriorityList.States = newStates
+                    end
+                end
+                RebuildRows()
+                UpdateSummaryAndValue()
+            end
+
+            function PriorityList:Refresh(NewList)
+                PriorityList.Order = {}
+                PriorityList.States = {}
+                for _, item in ipairs(NewList or {}) do
+                    table.insert(PriorityList.Order, tostring(item))
+                    PriorityList.States[tostring(item)] = true
+                end
+                RebuildRows()
+                UpdateSummaryAndValue()
+            end
+
+            local Debounce = false
+            local RenderStepped
+
+            function PriorityList:SetOpen(Bool)
+                if Debounce then return end
+                PriorityList.IsOpen = Bool
+                Items["Holder"].Instance.Parent = Bool and Library.Holder.Instance or Library.UnusedHolder.Instance
+
+                Debounce = true
+
+                if Bool then
+                    Items["Holder"].Instance.Visible = true
+                    Items["Holder"].Instance.ZIndex = 50
+
+                    Items["OpenIcon"]:Tween(nil, { Rotation = 180, ImageColor3 = Library.Theme.Accent })
+
+                    local function UpdatePos()
+                        local realBtn = Items["RealButton"].Instance
+                        local count = #PriorityList.Order
+                        if count == 0 then count = 1 end
+                        local maxRows = math.min(count, 8)
+                        local calcHeight = (maxRows * 26) + math.max(0, maxRows - 1) * 3 + 8
+
+                        local inset = GetGuiInset()
+                        local realX = realBtn.AbsolutePosition.X + inset.X
+                        local realY = realBtn.AbsolutePosition.Y + inset.Y
+                        local realHeight = realBtn.AbsoluteSize.Y
+                        local dropY = realY + realHeight + 4
+
+                        local cam = GetCamera()
+                        local vpHeight = (cam and cam.ViewportSize.Y > 200) and cam.ViewportSize.Y or 720
+                        local shouldDropUp = (dropY + calcHeight > vpHeight - 10) and (realY - calcHeight > 10)
+
+                        if shouldDropUp then
+                            Items["Holder"].Instance.AnchorPoint = Vector2New(0, 1)
+                            Items["Holder"].Instance.Position = UDim2New(0, realX, 0, realY - 4)
+                        else
+                            Items["Holder"].Instance.AnchorPoint = Vector2New(0, 0)
+                            Items["Holder"].Instance.Position = UDim2New(0, realX, 0, dropY)
+                        end
+                        Items["Holder"].Instance.Size = UDim2New(0, realBtn.AbsoluteSize.X, 0, calcHeight)
+                    end
+
+                    UpdatePos()
+                    RenderStepped = RunService.RenderStepped:Connect(UpdatePos)
+
+                    for _, Value in pairs(Library.OpenFrames) do
+                        if Value and Value ~= PriorityList and Value.SetOpen then
+                            pcall(function() Value:SetOpen(false) end)
+                        end
+                    end
+
+                    local flagKey = Data.Flag or Data.Name or "PriorityList"
+                    Library.OpenFrames[flagKey] = PriorityList
+                else
+                    Items["Holder"].Instance.Visible = false
+                    Items["OpenIcon"]:Tween(nil, { Rotation = 0, ImageColor3 = Library.Theme["Inactive Text"] })
+
+                    local flagKey = Data.Flag or Data.Name or "PriorityList"
+                    if Library.OpenFrames[flagKey] then
+                        Library.OpenFrames[flagKey] = nil
+                    end
+
+                    if RenderStepped then
+                        RenderStepped:Disconnect()
+                        RenderStepped = nil
+                    end
+                end
+
+                Debounce = false
+            end
+
+            function PriorityList:SetVisibility(Bool)
+                Items["PriorityList"].Instance.Visible = Bool
+            end
+            PriorityList.SetVisible = PriorityList.SetVisibility
+
+            getgenv().Options[PriorityList.Flag] = PriorityList
+
+            Library:Connect(UserInputService.InputBegan, function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    if Library:IsMouseOverFrame(Items["Holder"]) or Library:IsMouseOverFrame(Items["RealButton"]) then
+                        return
+                    end
+                    if Debounce or not PriorityList.IsOpen then return end
+                    PriorityList:SetOpen(false)
+                end
+            end)
+
+            local SearchData = {
+                Name = Data.Name,
+                Item = Items["PriorityList"]
+            }
+            local PageSearchData = Library.SearchItems[Data.Page]
+            if PageSearchData then
+                TableInsert(PageSearchData, SearchData)
+            end
+
+            Items["RealButton"]:Connect("MouseButton1Down", function()
+                PriorityList:SetOpen(not PriorityList.IsOpen)
+            end)
+
+            RebuildRows()
+            UpdateSummaryAndValue()
+
+            if Data.Default then
+                PriorityList:Set(Data.Default)
+            end
+
+            Library.SetFlags[PriorityList.Flag] = function(Value)
+                PriorityList:Set(Value)
+            end
+
+            return PriorityList, Items
         end
 
         Components.Colorpicker = function(Data)
@@ -8536,6 +9182,16 @@ local Library do
             Window.Notify = function(self, ...) return Library:Notification(...) end
             Window.Notification = function(self, ...) return Library:Notification(...) end
             Window.Watermark = function(self, ...) return Library:Watermark(...) end
+            Window.AddThemeTab = function(self, name, icon)
+                local tabName = name or "Theme"
+                local tabIcon = icon or "102467475629368"
+                local tab = self:Tab({ Name = tabName, Icon = tabIcon })
+                if ThemeManager and ThemeManager.BuildThemeSection then
+                    ThemeManager:BuildThemeSection(tab)
+                end
+                return tab
+            end
+            Window.ThemeMenu = Window.AddThemeTab
 
             return setmetatable(Window, self)
         end
@@ -11118,6 +11774,85 @@ local Library do
             return Dropdown
         end
 
+        Library.Sections.PriorityList = function(self, Data, ItemsList, Default, Callback)
+            if type(Data) == "string" then
+                Data = {
+                    Name = Data,
+                    Items = type(ItemsList) == "table" and ItemsList or {},
+                    Default = Default,
+                    Callback = type(Callback) == "function" and Callback or (type(Default) == "function" and Default or function() end)
+                }
+            elseif type(Data) ~= "table" then
+                Data = {}
+            end
+
+            local PriorityList = {
+                Window = self.Window,
+                Page = self.Page,
+                Section = self,
+
+                Name = Data.Name or Data.name or Data.Title or Data.title or Data.Text or Data.text or "Priority List",
+                Flag = Data.Flag or Data.flag or Library:NextFlag(),
+                Default = Data.Default or Data.default or nil,
+                Items = Data.Items or Data.items or { "One", "Two", "Three" },
+                Callback = Data.Callback or Data.callback or function() end,
+                Tooltip = Data.Tooltip or Data.tooltip or nil
+            }
+
+            local NewPriorityList, PriorityItems = Components.PriorityList({
+                Window = PriorityList.Window,
+                Page = PriorityList.Page,
+                Parent = PriorityList.Section.Items["Content"],
+                Callback = PriorityList.Callback,
+                Name = PriorityList.Name,
+                Flag = PriorityList.Flag,
+                Items = PriorityList.Items,
+                Default = PriorityList.Default
+            })
+
+            PriorityItems["PriorityList"]:Tooltip(PriorityList.Tooltip)
+
+            function PriorityList:Set(Value)
+                NewPriorityList:Set(Value)
+            end
+
+            function PriorityList:Get()
+                return NewPriorityList:Get()
+            end
+
+            function PriorityList:GetOrder()
+                return NewPriorityList:GetOrder()
+            end
+
+            function PriorityList:GetStates()
+                return NewPriorityList:GetStates()
+            end
+
+            function PriorityList:Refresh(List)
+                return NewPriorityList:Refresh(List)
+            end
+
+            function PriorityList:SetVisibility(Bool)
+                NewPriorityList:SetVisibility(Bool)
+            end
+            PriorityList.SetVisible = PriorityList.SetVisibility
+            PriorityList.SetValue = PriorityList.Set
+            PriorityList.GetValue = PriorityList.Get
+            function PriorityList:OnChanged(cb)
+                local oldCb = PriorityList.Callback
+                PriorityList.Callback = function(...)
+                    if oldCb then oldCb(...) end
+                    cb(...)
+                end
+            end
+
+            return PriorityList
+        end
+        Library.Sections.AddPriorityList = Library.Sections.PriorityList
+        Library.Sections.CreatePriorityList = Library.Sections.PriorityList
+        Library.Sections.PriorityOrder = Library.Sections.PriorityList
+        Library.Sections.AddPriorityOrder = Library.Sections.PriorityList
+
         Library.Sections.Label = function(self, Text, Alignment, Tooltip)
             if type(Text) == "table" then
                 local tbl = Text
@@ -11899,6 +12634,209 @@ getgenv().Library = Library
 
 local httpService = game:GetService("HttpService")
 
+    local ThemeManager = {
+        Library = Library,
+        Folder = "MerquryHub/Themes",
+        ActiveAnimation = "None",
+        AnimationSpeed = 1.0,
+        AnimationConnection = nil,
+        Presets = {
+            "Merqury Hub",
+            "Classic Merqury",
+            "Midnight Cyan",
+            "Emerald",
+            "Crimson",
+            "Cyberpunk Gold",
+            "Amethyst Night"
+        },
+        AnimatedThemes = {
+            "None",
+            "Chroma Wave",
+            "Neon Pulse",
+            "Cyber Matrix"
+        }
+    }
+
+    function ThemeManager:SetLibrary(lib)
+        self.Library = lib
+    end
+
+    function ThemeManager:SetFolder(folder)
+        self.Folder = folder
+        pcall(function()
+            if isfolder and makefolder and not isfolder(folder) then
+                makefolder(folder)
+            end
+        end)
+    end
+
+    function ThemeManager:StopAnimation()
+        if self.AnimationConnection then
+            self.AnimationConnection:Disconnect()
+            self.AnimationConnection = nil
+        end
+    end
+
+    function ThemeManager:StartChromaWave()
+        self:StopAnimation()
+        local stepTime = 0
+        local lastUpdate = 0
+        self.AnimationConnection = RunService.RenderStepped:Connect(function(dt)
+            stepTime = stepTime + dt * (self.AnimationSpeed or 1)
+            if tick() - lastUpdate >= 0.03 then
+                lastUpdate = tick()
+                local hue = (stepTime * 0.15) % 1
+                local color = Color3.fromHSV(hue, 0.82, 1)
+                Library:ChangeTheme("Accent", color)
+            end
+        end)
+    end
+
+    function ThemeManager:StartNeonPulse()
+        self:StopAnimation()
+        local stepTime = 0
+        local lastUpdate = 0
+        local base = Library.Theme.Accent
+        self.AnimationConnection = RunService.RenderStepped:Connect(function(dt)
+            stepTime = stepTime + dt * (self.AnimationSpeed or 1) * 3
+            if tick() - lastUpdate >= 0.03 then
+                lastUpdate = tick()
+                local factor = 0.65 + 0.35 * (math.sin(stepTime) * 0.5 + 0.5)
+                local r = math.clamp(base.R * factor, 0, 1)
+                local g = math.clamp(base.G * factor, 0, 1)
+                local b = math.clamp(base.B * factor, 0, 1)
+                Library:ChangeTheme("Accent", Color3.new(r, g, b))
+            end
+        end)
+    end
+
+    function ThemeManager:StartCyberMatrix()
+        self:StopAnimation()
+        local stepTime = 0
+        local lastUpdate = 0
+        self.AnimationConnection = RunService.RenderStepped:Connect(function(dt)
+            stepTime = stepTime + dt * (self.AnimationSpeed or 1) * 2.5
+            if tick() - lastUpdate >= 0.03 then
+                lastUpdate = tick()
+                local v = 0.5 + 0.5 * (math.sin(stepTime) * 0.5 + 0.5)
+                local g = math.floor(140 + 115 * v)
+                local b = math.floor(40 + 40 * v)
+                Library:ChangeTheme("Accent", Color3.fromRGB(0, g, b))
+            end
+        end)
+    end
+
+    function ThemeManager:SetAnimatedTheme(name)
+        self.ActiveAnimation = name
+        if name == "Chroma Wave" then
+            self:StartChromaWave()
+        elseif name == "Neon Pulse" then
+            self:StartNeonPulse()
+        elseif name == "Cyber Matrix" then
+            self:StartCyberMatrix()
+        else
+            self:StopAnimation()
+        end
+    end
+
+    function ThemeManager:ApplyTheme(name)
+        self:StopAnimation()
+        self.ActiveAnimation = "None"
+        Library:SetTheme(name)
+    end
+
+    function ThemeManager:BuildThemeSection(tab)
+        local section
+        if tab.Section then
+            section = tab:Section({ Name = "Theme Settings", Side = 1 })
+        elseif tab.AddSection then
+            section = tab:AddSection({ Name = "Theme Settings", Side = 1 })
+        else
+            section = tab
+        end
+
+        local presetDrop = section:Dropdown({
+            Name = "Theme Preset",
+            Flag = "ThemeManager_Preset",
+            Items = self.Presets,
+            Default = "Merqury Hub",
+            Callback = function(val)
+                self:ApplyTheme(val)
+            end
+        })
+
+        local animDrop = section:Dropdown({
+            Name = "Animated Theme",
+            Flag = "ThemeManager_Anim",
+            Items = self.AnimatedThemes,
+            Default = "None",
+            Callback = function(val)
+                self:SetAnimatedTheme(val)
+            end
+        })
+
+        local speedSlider = section:Slider({
+            Name = "Animation Speed",
+            Flag = "ThemeManager_Speed",
+            Min = 0.2,
+            Max = 3.0,
+            Default = 1.0,
+            Float = 0.1,
+            Callback = function(val)
+                self.AnimationSpeed = tonumber(val) or 1.0
+            end
+        })
+
+        section:Colorpicker({
+            Name = "Accent Color",
+            Flag = "ThemeManager_Accent",
+            Default = Library.Theme.Accent,
+            Callback = function(color)
+                self:StopAnimation()
+                Library:ChangeTheme("Accent", color)
+            end
+        })
+
+        section:Colorpicker({
+            Name = "Background Color",
+            Flag = "ThemeManager_Background",
+            Default = Library.Theme.Background,
+            Callback = function(color)
+                Library:ChangeTheme("Background", color)
+            end
+        })
+
+        section:Colorpicker({
+            Name = "Inline Color",
+            Flag = "ThemeManager_Inline",
+            Default = Library.Theme.Inline,
+            Callback = function(color)
+                Library:ChangeTheme("Inline", color)
+            end
+        })
+
+        section:Colorpicker({
+            Name = "Element Color",
+            Flag = "ThemeManager_Element",
+            Default = Library.Theme.Element,
+            Callback = function(color)
+                Library:ChangeTheme("Element", color)
+            end
+        })
+
+        section:Colorpicker({
+            Name = "Text Color",
+            Flag = "ThemeManager_Text",
+            Default = Library.Theme.Text,
+            Callback = function(color)
+                Library:ChangeTheme("Text", color)
+            end
+        })
+    end
+
+    Library.ThemeManager = ThemeManager
+    getgenv().ThemeManager = ThemeManager
+
 local SaveManager = {} do
     SaveManager.Folder = "MerquryHub"
     SaveManager.Ignore = {}
@@ -11920,6 +12858,7 @@ local SaveManager = {} do
         toggle = "Toggle", Toggle = "Toggle",
         slider = "Slider", Slider = "Slider",
         rangeslider = "RangeSlider", RangeSlider = "RangeSlider", minmaxslider = "RangeSlider", MinMaxSlider = "RangeSlider",
+        prioritylist = "PriorityList", priorityorder = "PriorityList", PriorityList = "PriorityList", PriorityOrder = "PriorityList",
         dropdown = "Dropdown", Dropdown = "Dropdown",
         colorpicker = "Colorpicker", Colorpicker = "Colorpicker", ColorPicker = "Colorpicker", color = "Colorpicker",
         gradientcolorpicker = "GradientColorpicker", GradientColorpicker = "GradientColorpicker",
@@ -12005,6 +12944,25 @@ local SaveManager = {} do
                     end
                 elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
                     SaveManager.Library.SetFlags[idx](val)
+                end
+            end,
+        },
+        PriorityList = {
+            Save = function(idx, object)
+                local order = (object.GetOrder and object:GetOrder()) or object.Order or {}
+                local states = (object.GetStates and object:GetStates()) or object.States or {}
+                return { type = "PriorityList", idx = idx, value = object.Value, order = order, states = states }
+            end,
+            Load = function(idx, data)
+                local obj = GetOptionObj(idx)
+                if obj and obj.Set then
+                    if data.order or data.states then
+                        obj:Set({ Order = data.order, States = data.states, Value = data.value })
+                    else
+                        obj:Set(data.value)
+                    end
+                elseif SaveManager.Library and SaveManager.Library.SetFlags and SaveManager.Library.SetFlags[idx] then
+                    SaveManager.Library.SetFlags[idx](data.value or data.order)
                 end
             end,
         },
