@@ -8531,7 +8531,8 @@ local Library do
                     BorderSizePixel = 0,
                     ZIndex = 1,
                     ClipsDescendants = true,
-                    BackgroundTransparency = 1
+                    Visible = false,
+                    BackgroundColor3 = FromRGB(16, 9, 7)
                 })
                 Instances:Create("UICorner", {
                     Parent = Items["ThemeBackground"].Instance,
@@ -8539,38 +8540,38 @@ local Library do
                     CornerRadius = UDimNew(0, 5)
                 })
 
-                Items["ThemeLiquidLayer"] = Instances:Create("Frame", {
+                Items["ThemeLiquidLayer"] = Instances:Create("ImageLabel", {
                     Parent = Items["ThemeBackground"].Instance,
                     Name = "\0",
-                    Size = UDim2New(1, 60, 1, 60),
-                    Position = UDim2New(0, -30, 0, -30),
+                    Size = UDim2New(1, 100, 1, 100),
+                    Position = UDim2New(0, -50, 0, -50),
                     BorderSizePixel = 0,
                     ZIndex = 1,
-                    Visible = false,
-                    BackgroundColor3 = FromRGB(255, 255, 255)
+                    Image = "rbxassetid://89224403789635",
+                    ScaleType = Enum.ScaleType.Tile,
+                    TileSize = UDim2New(0, 320, 0, 320),
+                    ImageColor3 = FromRGB(255, 100, 25),
+                    ImageTransparency = 0.35,
+                    BackgroundTransparency = 1,
+                    Visible = false
                 })
                 Items["ThemeLiquidGrad"] = Instances:Create("UIGradient", {
                     Parent = Items["ThemeLiquidLayer"].Instance,
                     Name = "\0",
                     Rotation = 45,
                     Color = RGBSequence{
-                        RGBSequenceKeypoint(0, FromRGB(25, 8, 4)),
-                        RGBSequenceKeypoint(0.3, FromRGB(180, 50, 15)),
-                        RGBSequenceKeypoint(0.65, FromRGB(240, 110, 25)),
-                        RGBSequenceKeypoint(1, FromRGB(20, 6, 3))
-                    },
-                    Transparency = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 0.45),
-                        NumberSequenceKeypoint.new(0.5, 0.7),
-                        NumberSequenceKeypoint.new(1, 0.9)
-                    })
+                        RGBSequenceKeypoint(0, FromRGB(255, 60, 15)),
+                        RGBSequenceKeypoint(0.35, FromRGB(255, 140, 30)),
+                        RGBSequenceKeypoint(0.7, FromRGB(190, 45, 12)),
+                        RGBSequenceKeypoint(1, FromRGB(35, 10, 5))
+                    }
                 })
 
                 Items["ThemeSheenLayer"] = Instances:Create("Frame", {
                     Parent = Items["ThemeBackground"].Instance,
                     Name = "\0",
-                    Size = UDim2New(1, 80, 1, 80),
-                    Position = UDim2New(0, -40, 0, -40),
+                    Size = UDim2New(1, 120, 1, 120),
+                    Position = UDim2New(0, -60, 0, -60),
                     BorderSizePixel = 0,
                     ZIndex = 1,
                     Visible = false,
@@ -8586,9 +8587,9 @@ local Library do
                     },
                     Transparency = NumberSequence.new({
                         NumberSequenceKeypoint.new(0, 1),
-                        NumberSequenceKeypoint.new(0.46, 1),
-                        NumberSequenceKeypoint.new(0.5, 0.82),
-                        NumberSequenceKeypoint.new(0.54, 1),
+                        NumberSequenceKeypoint.new(0.44, 1),
+                        NumberSequenceKeypoint.new(0.5, 0.75),
+                        NumberSequenceKeypoint.new(0.56, 1),
                         NumberSequenceKeypoint.new(1, 1)
                     })
                 })
@@ -8598,9 +8599,9 @@ local Library do
                     Name = "\0",
                     AnchorPoint = Vector2New(0.5, 0.5),
                     Position = UDim2New(0.5, 0, 0.5, 0),
-                    Size = UDim2New(0, 220, 0, 220),
+                    Size = UDim2New(0, 240, 0, 240),
                     Image = "rbxassetid://103982381939732",
-                    ImageTransparency = 0.93,
+                    ImageTransparency = 0.92,
                     ImageColor3 = FromRGB(255, 185, 45),
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
@@ -8744,9 +8745,7 @@ local Library do
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })
-                if Window.LogoColor then
-                    Items["Logo"]:AddToTheme({ImageColor3 = "Accent"})
-                end
+                Items["Logo"]:AddToTheme({ImageColor3 = "Accent"})
 
                 Items["Title"] = Instances:Create("TextLabel", {
                     Parent = Items["Topbar"].Instance,
@@ -10659,6 +10658,12 @@ local Library do
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(22, 25, 29)
                 })  Items["Topbar"]:AddToTheme({BackgroundColor3 = "Inline"})
+
+                if Section.Window then
+                    Section.Window.AllSections = Section.Window.AllSections or {}
+                    TableInsert(Section.Window.AllSections, Items["Section"])
+                    TableInsert(Section.Window.AllSections, Items["Topbar"])
+                end
 
                 Instances:Create("UICorner", {
                     Parent = Items["Topbar"].Instance,
@@ -12724,17 +12729,16 @@ local Library do
     local ThemeManager = {
         Library = Library,
         Folder = "MerquryHub/Themes",
-        CurrentTheme = "Madium",
+        CurrentTheme = "Merqury Hub",
         ActiveEffect = "None",
         AnimationSpeed = 1.0,
         AnimationConnection = nil,
         MenuInstance = nil,
-        RegisteredButtons = {},
         CardElements = {},
         ThemeDefinitions = {
-            ["Madium"] = {
-                Name = "Madium",
-                DisplayName = "Madium",
+            ["Merqury Hub"] = {
+                Name = "Merqury Hub",
+                Tag = "Signature Orange",
                 Animated = false,
                 Effect = "None",
                 Background = FromRGB(16, 18, 21),
@@ -12743,26 +12747,43 @@ local Library do
                 Accent = FromRGB(225, 115, 52),
                 Text = FromRGB(220, 222, 226),
                 InactiveText = FromRGB(150, 155, 165),
+                Image = FromRGB(220, 222, 226),
+                Border = FromRGB(32, 36, 42),
+                DarkGradient = FromRGB(211, 211, 211)
+            },
+            ["Classic Merqury"] = {
+                Name = "Classic Merqury",
+                Tag = "Iconic Purple",
+                Animated = false,
+                Effect = "None",
+                Background = FromRGB(16, 18, 21),
+                Inline = FromRGB(22, 25, 29),
+                Element = FromRGB(34, 39, 45),
+                Accent = FromRGB(155, 89, 210),
+                Text = FromRGB(220, 222, 226),
+                InactiveText = FromRGB(150, 155, 165),
+                Image = FromRGB(220, 222, 226),
                 Border = FromRGB(32, 36, 42),
                 DarkGradient = FromRGB(211, 211, 211)
             },
             ["Ember Liquid"] = {
                 Name = "Ember Liquid",
-                DisplayName = "Ember",
+                Tag = "Molten Fire",
                 Animated = true,
                 Effect = "Liquid",
-                Background = FromRGB(18, 10, 8),
-                Inline = FromRGB(28, 16, 12),
-                Element = FromRGB(44, 24, 18),
-                Accent = FromRGB(240, 105, 30),
-                Text = FromRGB(235, 220, 215),
-                InactiveText = FromRGB(160, 135, 125),
+                Background = FromRGB(16, 9, 7),
+                Inline = FromRGB(26, 14, 10),
+                Element = FromRGB(42, 22, 16),
+                Accent = FromRGB(245, 110, 25),
+                Text = FromRGB(235, 222, 218),
+                InactiveText = FromRGB(165, 140, 130),
+                Image = FromRGB(235, 222, 218),
                 Border = FromRGB(52, 28, 20),
-                DarkGradient = FromRGB(220, 150, 120)
+                DarkGradient = FromRGB(225, 160, 130)
             },
             ["Obsidian"] = {
                 Name = "Obsidian",
-                DisplayName = "Obsidian",
+                Tag = "Metallic Sheen",
                 Animated = true,
                 Effect = "Sheen",
                 Background = FromRGB(13, 14, 16),
@@ -12771,26 +12792,29 @@ local Library do
                 Accent = FromRGB(190, 200, 215),
                 Text = FromRGB(230, 235, 240),
                 InactiveText = FromRGB(145, 150, 160),
+                Image = FromRGB(230, 235, 240),
                 Border = FromRGB(35, 38, 45),
                 DarkGradient = FromRGB(195, 205, 215)
             },
             ["Pearl"] = {
                 Name = "Pearl",
-                DisplayName = "Pearl",
-                Animated = true,
-                Effect = "Pearl",
-                Background = FromRGB(238, 240, 244),
-                Inline = FromRGB(225, 228, 235),
-                Element = FromRGB(210, 215, 225),
+                Tag = "Clean Light Mode",
+                Animated = false,
+                Effect = "None",
+                Background = FromRGB(242, 244, 248),
+                Inline = FromRGB(255, 255, 255),
+                Element = FromRGB(232, 236, 244),
                 Accent = FromRGB(142, 68, 173),
                 Text = FromRGB(25, 28, 35),
-                InactiveText = FromRGB(110, 115, 130),
-                Border = FromRGB(200, 205, 215),
-                DarkGradient = FromRGB(180, 185, 195)
+                InactiveText = FromRGB(115, 122, 136),
+                Image = FromRGB(35, 40, 52),
+                Border = FromRGB(218, 224, 234),
+                DarkGradient = FromRGB(242, 244, 248),
+                Shadow = FromRGB(190, 195, 210)
             },
             ["Aurora"] = {
                 Name = "Aurora",
-                DisplayName = "Aurora",
+                Tag = "Celestial Wave",
                 Animated = true,
                 Effect = "Aurora",
                 Background = FromRGB(10, 18, 22),
@@ -12799,12 +12823,13 @@ local Library do
                 Accent = FromRGB(0, 230, 180),
                 Text = FromRGB(220, 245, 240),
                 InactiveText = FromRGB(130, 165, 160),
+                Image = FromRGB(220, 245, 240),
                 Border = FromRGB(24, 45, 52),
                 DarkGradient = FromRGB(170, 220, 210)
             },
             ["Silk"] = {
                 Name = "Silk",
-                DisplayName = "Silk",
+                Tag = "Velvet Violet",
                 Animated = true,
                 Effect = "Silk",
                 Background = FromRGB(18, 14, 24),
@@ -12813,12 +12838,13 @@ local Library do
                 Accent = FromRGB(185, 105, 255),
                 Text = FromRGB(235, 225, 245),
                 InactiveText = FromRGB(155, 140, 170),
+                Image = FromRGB(235, 225, 245),
                 Border = FromRGB(45, 32, 62),
                 DarkGradient = FromRGB(205, 175, 235)
             },
             ["Cyberpunk"] = {
                 Name = "Cyberpunk",
-                DisplayName = "Cyberpunk",
+                Tag = "Neon Gold",
                 Animated = true,
                 Effect = "Pulse",
                 Background = FromRGB(16, 16, 14),
@@ -12827,12 +12853,13 @@ local Library do
                 Accent = FromRGB(245, 200, 25),
                 Text = FromRGB(240, 238, 225),
                 InactiveText = FromRGB(160, 155, 135),
+                Image = FromRGB(240, 238, 225),
                 Border = FromRGB(48, 45, 28),
                 DarkGradient = FromRGB(225, 215, 180)
             },
             ["Midnight"] = {
                 Name = "Midnight",
-                DisplayName = "Midnight",
+                Tag = "Navy Abyss",
                 Animated = false,
                 Effect = "None",
                 Background = FromRGB(10, 14, 22),
@@ -12841,12 +12868,13 @@ local Library do
                 Accent = FromRGB(0, 165, 255),
                 Text = FromRGB(220, 230, 245),
                 InactiveText = FromRGB(135, 150, 175),
+                Image = FromRGB(220, 230, 245),
                 Border = FromRGB(22, 35, 55),
                 DarkGradient = FromRGB(180, 205, 235)
             },
             ["Rat"] = {
                 Name = "Rat",
-                DisplayName = "Rat",
+                Tag = "Cheese Gold",
                 Animated = true,
                 Effect = "Rat",
                 Background = FromRGB(16, 16, 18),
@@ -12855,12 +12883,13 @@ local Library do
                 Accent = FromRGB(255, 185, 45),
                 Text = FromRGB(230, 228, 225),
                 InactiveText = FromRGB(155, 150, 145),
+                Image = FromRGB(230, 228, 225),
                 Border = FromRGB(42, 40, 46),
                 DarkGradient = FromRGB(215, 200, 180)
             }
         },
         ThemeOrder = {
-            "Madium", "Ember Liquid", "Obsidian", "Pearl", "Aurora", "Silk", "Cyberpunk", "Midnight", "Rat"
+            "Merqury Hub", "Classic Merqury", "Ember Liquid", "Obsidian", "Pearl", "Aurora", "Silk", "Cyberpunk", "Midnight", "Rat"
         }
     }
 
@@ -12884,6 +12913,9 @@ local Library do
         end
         local win = Library.CurrentWindow
         if win then
+            if win.ThemeBackground and win.ThemeBackground.Instance then
+                win.ThemeBackground.Instance.Visible = false
+            end
             if win.ThemeLiquidLayer and win.ThemeLiquidLayer.Instance then
                 win.ThemeLiquidLayer.Instance.Visible = false
             end
@@ -12892,6 +12924,13 @@ local Library do
             end
             if win.ThemeRatLayer and win.ThemeRatLayer.Instance then
                 win.ThemeRatLayer.Instance.Visible = false
+            end
+            if win.AllSections then
+                for _, sec in ipairs(win.AllSections) do
+                    if sec and sec.Instance then
+                        sec.Instance.BackgroundTransparency = 0
+                    end
+                end
             end
         end
     end
@@ -12903,20 +12942,36 @@ local Library do
         local win = Library.CurrentWindow
         if not win or effect == "None" then return end
 
+        if win.ThemeBackground and win.ThemeBackground.Instance then
+            win.ThemeBackground.Instance.Visible = true
+        end
+
+        if win.AllSections then
+            for _, sec in ipairs(win.AllSections) do
+                if sec and sec.Instance then
+                    sec.Instance.BackgroundTransparency = 0.22
+                end
+            end
+        end
+
         local stepTime = 0
         local lastUpdate = 0
 
         if effect == "Liquid" then
             if win.ThemeLiquidLayer and win.ThemeLiquidLayer.Instance then
                 win.ThemeLiquidLayer.Instance.Visible = true
+                win.ThemeLiquidLayer.Instance.ImageColor3 = FromRGB(255, 95, 20)
+                win.ThemeLiquidLayer.Instance.ImageTransparency = 0.35
             end
             self.AnimationConnection = RunService.RenderStepped:Connect(function(dt)
                 stepTime = stepTime + dt * (self.AnimationSpeed or 1)
                 if tick() - lastUpdate >= 0.033 then
                     lastUpdate = tick()
                     if win.ThemeLiquidGrad and win.ThemeLiquidGrad.Instance then
-                        win.ThemeLiquidGrad.Instance.Rotation = 45 + math.sin(stepTime * 0.7) * 22
-                        win.ThemeLiquidGrad.Instance.Offset = Vector2New(math.sin(stepTime * 0.5) * 0.14, math.cos(stepTime * 0.6) * 0.14)
+                        win.ThemeLiquidGrad.Instance.Rotation = 45 + math.sin(stepTime * 0.8) * 28
+                    end
+                    if win.ThemeLiquidLayer and win.ThemeLiquidLayer.Instance then
+                        win.ThemeLiquidLayer.Instance.Position = UDim2New(0, -50 + math.sin(stepTime * 0.5) * 18, 0, -50 + math.cos(stepTime * 0.6) * 18)
                     end
                 end
             end)
@@ -12934,44 +12989,39 @@ local Library do
                     end
                 end
             end)
-        elseif effect == "Pearl" then
-            if win.ThemeSheenLayer and win.ThemeSheenLayer.Instance then
-                win.ThemeSheenLayer.Instance.Visible = true
-            end
-            self.AnimationConnection = RunService.RenderStepped:Connect(function(dt)
-                stepTime = stepTime + dt * (self.AnimationSpeed or 1)
-                if tick() - lastUpdate >= 0.033 then
-                    lastUpdate = tick()
-                    if win.ThemeSheenGrad and win.ThemeSheenGrad.Instance then
-                        local progress = ((stepTime * 0.25) % 3) - 1.5
-                        win.ThemeSheenGrad.Instance.Offset = Vector2New(progress, 0)
-                    end
-                end
-            end)
         elseif effect == "Aurora" then
             if win.ThemeLiquidLayer and win.ThemeLiquidLayer.Instance then
                 win.ThemeLiquidLayer.Instance.Visible = true
+                win.ThemeLiquidLayer.Instance.ImageColor3 = FromRGB(0, 230, 180)
+                win.ThemeLiquidLayer.Instance.ImageTransparency = 0.4
             end
             self.AnimationConnection = RunService.RenderStepped:Connect(function(dt)
                 stepTime = stepTime + dt * (self.AnimationSpeed or 1)
                 if tick() - lastUpdate >= 0.033 then
                     lastUpdate = tick()
                     if win.ThemeLiquidGrad and win.ThemeLiquidGrad.Instance then
-                        win.ThemeLiquidGrad.Instance.Rotation = (stepTime * 18) % 360
+                        win.ThemeLiquidGrad.Instance.Rotation = (stepTime * 20) % 360
+                    end
+                    if win.ThemeLiquidLayer and win.ThemeLiquidLayer.Instance then
+                        win.ThemeLiquidLayer.Instance.Position = UDim2New(0, -50 + math.cos(stepTime * 0.4) * 16, 0, -50 + math.sin(stepTime * 0.5) * 16)
                     end
                 end
             end)
         elseif effect == "Silk" then
             if win.ThemeLiquidLayer and win.ThemeLiquidLayer.Instance then
                 win.ThemeLiquidLayer.Instance.Visible = true
+                win.ThemeLiquidLayer.Instance.ImageColor3 = FromRGB(185, 105, 255)
+                win.ThemeLiquidLayer.Instance.ImageTransparency = 0.4
             end
             self.AnimationConnection = RunService.RenderStepped:Connect(function(dt)
                 stepTime = stepTime + dt * (self.AnimationSpeed or 1)
                 if tick() - lastUpdate >= 0.033 then
                     lastUpdate = tick()
                     if win.ThemeLiquidGrad and win.ThemeLiquidGrad.Instance then
-                        win.ThemeLiquidGrad.Instance.Rotation = 60 + math.sin(stepTime * 0.8) * 30
-                        win.ThemeLiquidGrad.Instance.Offset = Vector2New(0, math.sin(stepTime * 0.7) * 0.12)
+                        win.ThemeLiquidGrad.Instance.Rotation = 60 + math.sin(stepTime * 0.8) * 32
+                    end
+                    if win.ThemeLiquidLayer and win.ThemeLiquidLayer.Instance then
+                        win.ThemeLiquidLayer.Instance.Position = UDim2New(0, -50, 0, -50 + math.sin(stepTime * 0.7) * 16)
                     end
                 end
             end)
@@ -12981,7 +13031,7 @@ local Library do
                 stepTime = stepTime + dt * (self.AnimationSpeed or 1) * 2.5
                 if tick() - lastUpdate >= 0.033 then
                     lastUpdate = tick()
-                    local factor = 0.72 + 0.28 * (math.sin(stepTime) * 0.5 + 0.5)
+                    local factor = 0.75 + 0.25 * (math.sin(stepTime) * 0.5 + 0.5)
                     local r = math.clamp(baseAccent.R * factor, 0, 1)
                     local g = math.clamp(baseAccent.G * factor, 0, 1)
                     local b = math.clamp(baseAccent.B * factor, 0, 1)
@@ -12997,7 +13047,7 @@ local Library do
                 if tick() - lastUpdate >= 0.033 then
                     lastUpdate = tick()
                     if win.ThemeRatLayer and win.ThemeRatLayer.Instance then
-                        win.ThemeRatLayer.Instance.ImageTransparency = 0.91 + math.sin(stepTime * 2) * 0.04
+                        win.ThemeRatLayer.Instance.ImageTransparency = 0.90 + math.sin(stepTime * 2) * 0.05
                     end
                 end
             end)
@@ -13025,8 +13075,10 @@ local Library do
         Library:ChangeTheme("Accent", def.Accent)
         Library:ChangeTheme("Text", def.Text)
         if def.InactiveText then Library:ChangeTheme("Inactive Text", def.InactiveText) end
+        if def.Image then Library:ChangeTheme("Image", def.Image) end
         if def.Border then Library:ChangeTheme("Border", def.Border) end
         if def.DarkGradient then Library:ChangeTheme("Dark Gradient", def.DarkGradient) end
+        if def.Shadow then Library:ChangeTheme("Shadow", def.Shadow) end
 
         if def.Animated and def.Effect ~= "None" then
             self:StartEffect(def.Effect)
@@ -13037,22 +13089,14 @@ local Library do
         for name, card in pairs(self.CardElements) do
             local isSelected = (name == themeName)
             if card.Radio and card.Radio.Instance then
-                card.Radio.Instance.BackgroundColor3 = isSelected and def.Accent or FromRGB(20, 22, 26)
-            end
-            if card.RadioDot and card.RadioDot.Instance then
-                card.RadioDot.Instance.Visible = isSelected
+                card.Radio.Instance.Visible = isSelected
+                card.Radio.Instance.BackgroundColor3 = def.Accent
             end
             if card.Title and card.Title.Instance then
                 card.Title.Instance.TextColor3 = isSelected and def.Accent or def.Text
             end
             if card.Stroke and card.Stroke.Instance then
-                card.Stroke.Instance.Color = isSelected and def.Accent or def.Border
-            end
-        end
-
-        for _, btnObj in ipairs(self.RegisteredButtons) do
-            if btnObj and btnObj.SetText then
-                btnObj:SetText("Theme: " .. themeName .. (def.Animated and " (Animated)" or ""))
+                card.Stroke.Instance.Color = isSelected and def.Accent or Library.Theme.Border
             end
         end
 
@@ -13076,7 +13120,7 @@ local Library do
             Name = "\0",
             AnchorPoint = Vector2New(0.5, 0.5),
             Position = UDim2New(0.5, 0, 0.5, 0),
-            Size = UDim2New(0, 540, 0, 430),
+            Size = UDim2New(0, 550, 0, 440),
             ZIndex = 120,
             BorderSizePixel = 0,
             BackgroundColor3 = FromRGB(22, 25, 29)
@@ -13086,7 +13130,7 @@ local Library do
         Instances:Create("UICorner", {
             Parent = Modal.Instance,
             Name = "\0",
-            CornerRadius = UDimNew(0, 8)
+            CornerRadius = UDimNew(0, 7)
         })
 
         local ModalStroke = Instances:Create("UIStroke", {
@@ -13108,7 +13152,7 @@ local Library do
         Instances:Create("UICorner", {
             Parent = Topbar.Instance,
             Name = "\0",
-            CornerRadius = UDimNew(0, 8)
+            CornerRadius = UDimNew(0, 7)
         })
 
         local Title = Instances:Create("TextLabel", {
@@ -13120,7 +13164,7 @@ local Library do
             TextColor3 = FromRGB(220, 222, 226),
             AnchorPoint = Vector2New(0, 0.5),
             Position = UDim2New(0, 14, 0.5, 0),
-            Size = UDim2New(0, 160, 0, 20),
+            Size = UDim2New(0, 150, 0, 20),
             BackgroundTransparency = 1,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 122
@@ -13130,12 +13174,12 @@ local Library do
             Parent = Topbar.Instance,
             Name = "\0",
             FontFace = Library.Font,
-            Text = "Select a theme preset or animated background",
+            Text = "Choose your interface style & animated backgrounds",
             TextSize = 11,
             TextColor3 = FromRGB(150, 155, 165),
             AnchorPoint = Vector2New(0, 0.5),
-            Position = UDim2New(0, 150, 0.5, 0),
-            Size = UDim2New(1, -190, 0, 16),
+            Position = UDim2New(0, 140, 0.5, 0),
+            Size = UDim2New(1, -180, 0, 16),
             BackgroundTransparency = 1,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 122
@@ -13175,7 +13219,7 @@ local Library do
             Position = UDim2New(0, 12, 0, 48),
             Size = UDim2New(1, -24, 1, -56),
             ScrollBarThickness = 3,
-            CanvasSize = UDim2New(0, 0, 0, 400),
+            CanvasSize = UDim2New(0, 0, 0, 410),
             ScrollBarImageColor3 = Library.Theme.Accent,
             ZIndex = 121
         })  Scroll:AddToTheme({ScrollBarImageColor3 = "Accent"})
@@ -13183,8 +13227,8 @@ local Library do
         local Grid = Instances:Create("UIGridLayout", {
             Parent = Scroll.Instance,
             Name = "\0",
-            CellSize = UDim2New(0, 160, 0, 120),
-            CellPadding = UDim2New(0, 12, 0, 12),
+            CellSize = UDim2New(0, 160, 0, 108),
+            CellPadding = UDim2New(0, 14, 0, 12),
             SortOrder = Enum.SortOrder.LayoutOrder
         })
 
@@ -13201,7 +13245,7 @@ local Library do
                     BorderSizePixel = 0,
                     LayoutOrder = orderIdx,
                     ZIndex = 122,
-                    BackgroundColor3 = FromRGB(16, 18, 21)
+                    BackgroundColor3 = FromRGB(18, 20, 24)
                 })  Card:AddToTheme({BackgroundColor3 = "Background"})
 
                 Instances:Create("UICorner", {
@@ -13217,142 +13261,143 @@ local Library do
                     Color = isCurrent and themeDef.Accent or Library.Theme.Border
                 })
 
-                local Mockup = Instances:Create("Frame", {
+                local PreviewBox = Instances:Create("Frame", {
                     Parent = Card.Instance,
                     Name = "\0",
                     Position = UDim2New(0, 6, 0, 6),
-                    Size = UDim2New(1, -12, 0, 80),
+                    Size = UDim2New(1, -12, 0, 56),
                     BorderSizePixel = 0,
                     ClipsDescendants = true,
                     ZIndex = 123,
                     BackgroundColor3 = themeDef.Background
                 })
                 Instances:Create("UICorner", {
-                    Parent = Mockup.Instance,
+                    Parent = PreviewBox.Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
+                    CornerRadius = UDimNew(0, 5)
                 })
 
-                local MockTopbar = Instances:Create("Frame", {
-                    Parent = Mockup.Instance,
+                local AccentBar = Instances:Create("Frame", {
+                    Parent = PreviewBox.Instance,
                     Name = "\0",
-                    Size = UDim2New(1, 0, 0, 14),
+                    Position = UDim2New(0, 0, 0, 0),
+                    Size = UDim2New(1, 0, 0, 3),
                     BorderSizePixel = 0,
                     ZIndex = 124,
-                    BackgroundColor3 = themeDef.Inline
+                    BackgroundColor3 = themeDef.Accent
                 })
 
-                for dotIdx = 1, 3 do
-                    local dot = Instances:Create("Frame", {
-                        Parent = MockTopbar.Instance,
-                        Name = "\0",
-                        Size = UDim2New(0, 4, 0, 4),
-                        AnchorPoint = Vector2New(0, 0.5),
-                        Position = UDim2New(0, 6 + (dotIdx - 1) * 7, 0.5, 0),
-                        BorderSizePixel = 0,
-                        ZIndex = 125,
-                        BackgroundColor3 = dotIdx == 1 and themeDef.Accent or FromRGB(180, 185, 195)
-                    })
-                    Instances:Create("UICorner", { Parent = dot.Instance, CornerRadius = UDimNew(1, 0) })
-                end
-
-                local MockSidebar = Instances:Create("Frame", {
-                    Parent = Mockup.Instance,
+                local PreviewGlow = Instances:Create("Frame", {
+                    Parent = PreviewBox.Instance,
                     Name = "\0",
-                    Position = UDim2New(0, 0, 0, 14),
-                    Size = UDim2New(0, 16, 1, -14),
+                    Size = UDim2New(1, 0, 1, 0),
                     BorderSizePixel = 0,
-                    ZIndex = 124,
-                    BackgroundColor3 = themeDef.Inline
+                    ZIndex = 123,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
                 })
-
-                for lineIdx = 1, 3 do
-                    local lineW = (lineIdx == 1 and 65) or (lineIdx == 2 and 45) or 55
-                    local lineC = (lineIdx == 1 and themeDef.Accent) or (lineIdx == 2 and themeDef.Text) or FromRGB(120, 125, 135)
-                    local codeLine = Instances:Create("Frame", {
-                        Parent = Mockup.Instance,
-                        Name = "\0",
-                        Position = UDim2New(0, 24, 0, 22 + (lineIdx - 1) * 9),
-                        Size = UDim2New(0, lineW, 0, 3),
-                        BorderSizePixel = 0,
-                        ZIndex = 124,
-                        BackgroundColor3 = lineC
+                Instances:Create("UIGradient", {
+                    Parent = PreviewGlow.Instance,
+                    Name = "\0",
+                    Rotation = 35,
+                    Color = RGBSequence{
+                        RGBSequenceKeypoint(0, themeDef.Accent),
+                        RGBSequenceKeypoint(0.4, themeDef.Inline),
+                        RGBSequenceKeypoint(1, themeDef.Background)
+                    },
+                    Transparency = NumberSequence.new({
+                        NumberSequenceKeypoint.new(0, 0.4),
+                        NumberSequenceKeypoint.new(1, 0.85)
                     })
-                    Instances:Create("UICorner", { Parent = codeLine.Instance, CornerRadius = UDimNew(0, 1) })
-                end
+                })
 
                 if themeDef.Animated then
                     local Badge = Instances:Create("Frame", {
-                        Parent = Mockup.Instance,
+                        Parent = PreviewBox.Instance,
                         Name = "\0",
                         AnchorPoint = Vector2New(0, 1),
                         Position = UDim2New(0, 5, 1, -5),
-                        Size = UDim2New(0, 48, 0, 14),
+                        Size = UDim2New(0, 56, 0, 14),
                         BorderSizePixel = 0,
-                        ZIndex = 126,
-                        BackgroundColor3 = FromRGB(10, 10, 12)
+                        ZIndex = 125,
+                        BackgroundColor3 = FromRGB(8, 9, 12)
                     })
-                    Badge.Instance.BackgroundTransparency = 0.3
+                    Badge.Instance.BackgroundTransparency = 0.35
                     Instances:Create("UICorner", { Parent = Badge.Instance, CornerRadius = UDimNew(0, 3) })
 
                     local BadgeText = Instances:Create("TextLabel", {
                         Parent = Badge.Instance,
                         Name = "\0",
                         FontFace = Library.Font,
-                        Text = "Animated",
-                        TextSize = 9,
+                        Text = "ANIMATED",
+                        TextSize = 8,
                         TextColor3 = FromRGB(255, 255, 255),
                         Size = UDim2New(1, 0, 1, 0),
                         BackgroundTransparency = 1,
-                        ZIndex = 127
+                        ZIndex = 126
                     })
                 end
 
-                local Radio = Instances:Create("Frame", {
-                    Parent = Mockup.Instance,
+                local ActiveBadge = Instances:Create("Frame", {
+                    Parent = PreviewBox.Instance,
                     Name = "\0",
-                    AnchorPoint = Vector2New(1, 1),
-                    Position = UDim2New(1, -6, 1, -5),
-                    Size = UDim2New(0, 14, 0, 14),
-                    BorderSizePixel = 0,
-                    ZIndex = 126,
-                    BackgroundColor3 = isCurrent and themeDef.Accent or FromRGB(20, 22, 26)
-                })
-                Instances:Create("UICorner", { Parent = Radio.Instance, CornerRadius = UDimNew(1, 0) })
-
-                local RadioDot = Instances:Create("Frame", {
-                    Parent = Radio.Instance,
-                    Name = "\0",
-                    AnchorPoint = Vector2New(0.5, 0.5),
-                    Position = UDim2New(0.5, 0, 0.5, 0),
-                    Size = UDim2New(0, 6, 0, 6),
+                    AnchorPoint = Vector2New(1, 0),
+                    Position = UDim2New(1, -5, 0, 6),
+                    Size = UDim2New(0, 16, 0, 16),
                     BorderSizePixel = 0,
                     Visible = isCurrent,
-                    ZIndex = 127,
-                    BackgroundColor3 = FromRGB(255, 255, 255)
+                    ZIndex = 125,
+                    BackgroundColor3 = themeDef.Accent
                 })
-                Instances:Create("UICorner", { Parent = RadioDot.Instance, CornerRadius = UDimNew(1, 0) })
+                Instances:Create("UICorner", { Parent = ActiveBadge.Instance, CornerRadius = UDimNew(1, 0) })
+
+                local CheckText = Instances:Create("TextLabel", {
+                    Parent = ActiveBadge.Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    Text = "✓",
+                    TextSize = 10,
+                    TextColor3 = FromRGB(255, 255, 255),
+                    Size = UDim2New(1, 0, 1, 0),
+                    BackgroundTransparency = 1,
+                    ZIndex = 126
+                })
 
                 local CardTitle = Instances:Create("TextLabel", {
                     Parent = Card.Instance,
                     Name = "\0",
                     FontFace = Library.Font,
-                    Text = themeDef.DisplayName or themeKey,
-                    TextSize = 12,
+                    Text = themeDef.Name,
+                    TextSize = 13,
                     TextColor3 = isCurrent and themeDef.Accent or FromRGB(220, 222, 226),
-                    AnchorPoint = Vector2New(0, 1),
-                    Position = UDim2New(0, 8, 1, -6),
-                    Size = UDim2New(1, -16, 0, 18),
+                    AnchorPoint = Vector2New(0, 0),
+                    Position = UDim2New(0, 8, 0, 66),
+                    Size = UDim2New(1, -16, 0, 16),
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    ZIndex = 123
+                })
+
+                local CardTag = Instances:Create("TextLabel", {
+                    Parent = Card.Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    Text = themeDef.Tag or "",
+                    TextSize = 10,
+                    TextColor3 = FromRGB(150, 155, 165),
+                    AnchorPoint = Vector2New(0, 0),
+                    Position = UDim2New(0, 8, 0, 83),
+                    Size = UDim2New(1, -16, 0, 14),
+                    BackgroundTransparency = 1,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
                     ZIndex = 123
                 })
 
                 self.CardElements[themeKey] = {
                     Card = Card,
                     Stroke = CardStroke,
-                    Radio = Radio,
-                    RadioDot = RadioDot,
+                    Radio = ActiveBadge,
                     Title = CardTitle
                 }
 
@@ -13385,15 +13430,13 @@ local Library do
             targetSection = section
         end
 
-        local currentName = self.CurrentTheme or "Madium"
         local themeBtn = targetSection:Button({
-            Name = "Theme: " .. currentName,
+            Name = "Open Theme Menu",
             Callback = function()
                 self:OpenThemeMenu()
             end
         })
 
-        table.insert(self.RegisteredButtons, themeBtn)
         return themeBtn
     end
 
