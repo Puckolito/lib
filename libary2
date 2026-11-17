@@ -8375,7 +8375,7 @@ local Library do
                     Size = UDim2New(0, 22, 0, 22),
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
-                })  Items["Icon"]:AddToTheme({ImageColor3 = "Image"})
+                })  Items["Icon"]:AddToTheme({ImageColor3 = "Accent"})
 
                 Items["Text"] = Instances:Create("TextLabel", {
                     Parent = Items["KeybindsList"].Instance,
@@ -9469,8 +9469,8 @@ local Library do
                     Items["Text"].Instance.Visible = true
                     Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, Items["Text"].Instance.TextBounds.X + _iconWidth + 11, 0, 32)})
                     if Page._hasIcon then
-                        Items["Icon"]:ChangeItemTheme({ImageColor3 = "Image"})
-                        Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Image, ImageTransparency = 0})
+                        Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
+                        Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
                     end
                     Library.CurrentPage = Page
                 else
@@ -9686,8 +9686,8 @@ local Library do
                 if Bool then
                     Items["Text"].Instance.Visible = true
                     Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, Items["Text"].Instance.TextBounds.X + 38, 0, 32)})
-                    Items["Icon"]:ChangeItemTheme({ImageColor3 = "Image"})
-                    Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Image, ImageTransparency = 0})
+                    Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
+                    Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
 
                     Library.CurrentPage = SubPage
                 else
@@ -10664,7 +10664,7 @@ local Library do
                     BorderSizePixel = 0,
                     Visible = _hasSecIcon,
                     BackgroundColor3 = FromRGB(255, 255, 255)
-                })  Items["Icon"]:AddToTheme({ImageColor3 = "Image"})
+                })  Items["Icon"]:AddToTheme({ImageColor3 = "Accent"})
 
                 Instances:Create("UIPadding", {
                     Parent = Items["Section"].Instance,
@@ -13005,12 +13005,12 @@ local Library do
             BorderSizePixel = 0,
             Position = UDim2New(0, 10, 0, 42),
             Size = UDim2New(1, -20, 1, -50),
-            ScrollBarThickness = 3,
+            ScrollBarThickness = 0,
+            ScrollBarImageTransparency = 1,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
             CanvasSize = UDim2New(0, 0, 0, 0),
-            ScrollBarImageColor3 = Library.Theme.Accent,
             ZIndex = 121
-        })  Scroll:AddToTheme({ScrollBarImageColor3 = "Accent"})
+        })
 
         local Grid = Instances:Create("UIGridLayout", {
             Parent = Scroll.Instance,
