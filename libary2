@@ -12995,23 +12995,52 @@ local Library do
 
         for name, card in pairs(self.CardElements) do
             local isSelected = (name == themeName)
+            local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-            if card.Title and card.Title.Instance then
+            if card.Card and card.Card.Instance then
                 if shouldAnimate then
-                    TweenService:Create(card.Title.Instance, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                        TextColor3 = isSelected and def.Accent or def.Text
+                    TweenService:Create(card.Card.Instance, tInfo, {
+                        BackgroundColor3 = def.Element,
+                        BackgroundTransparency = isSelected and 0.2 or 1
                     }):Play()
                 else
-                    card.Title.Instance.TextColor3 = isSelected and def.Accent or def.Text
+                    card.Card.Instance.BackgroundColor3 = def.Element
+                    card.Card.Instance.BackgroundTransparency = isSelected and 0.2 or 1
+                end
+            end
+            if card.Indicator and card.Indicator.Instance then
+                if shouldAnimate then
+                    TweenService:Create(card.Indicator.Instance, tInfo, {
+                        BackgroundColor3 = def.Accent,
+                        BackgroundTransparency = isSelected and 0 or 1,
+                        Size = isSelected and UDim2New(0, 3, 0, 14) or UDim2New(0, 3, 0, 6)
+                    }):Play()
+                else
+                    card.Indicator.Instance.BackgroundColor3 = def.Accent
+                    card.Indicator.Instance.BackgroundTransparency = isSelected and 0 or 1
+                    card.Indicator.Instance.Size = isSelected and UDim2New(0, 3, 0, 14) or UDim2New(0, 3, 0, 6)
+                end
+            end
+            if card.Title and card.Title.Instance then
+                if shouldAnimate then
+                    TweenService:Create(card.Title.Instance, tInfo, {
+                        TextColor3 = def.Text,
+                        TextTransparency = isSelected and 0 or 0.38
+                    }):Play()
+                else
+                    card.Title.Instance.TextColor3 = def.Text
+                    card.Title.Instance.TextTransparency = isSelected and 0 or 0.38
                 end
             end
             if card.Stroke and card.Stroke.Instance then
                 if shouldAnimate then
-                    TweenService:Create(card.Stroke.Instance, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                        Color = isSelected and def.Accent or def.Border
+                    TweenService:Create(card.Stroke.Instance, tInfo, {
+                        Color = isSelected and def.Accent or def.Border,
+                        Transparency = isSelected and 0.45 or 1
                     }):Play()
                 else
                     card.Stroke.Instance.Color = isSelected and def.Accent or def.Border
+                    card.Stroke.Instance.Transparency = isSelected and 0.45 or 1
                 end
             end
         end
@@ -13036,11 +13065,11 @@ local Library do
             Name = "\0",
             AnchorPoint = Vector2New(0.5, 0.5),
             Position = UDim2New(0.5, 0, 0.5, 0),
-            Size = UDim2New(0, 520, 0, 360),
+            Size = UDim2New(0, 340, 0, 266),
             ZIndex = 120,
             BorderSizePixel = 0,
-            BackgroundColor3 = Library.Theme.Background
-        })  Modal:AddToTheme({BackgroundColor3 = "Background"})
+            BackgroundColor3 = Library.Theme.Inline
+        })  Modal:AddToTheme({BackgroundColor3 = "Inline"})
         Modal:MakeDraggable()
 
         Instances:Create("UICorner", {
@@ -13059,7 +13088,7 @@ local Library do
         local Topbar = Instances:Create("Frame", {
             Parent = Modal.Instance,
             Name = "\0",
-            Size = UDim2New(1, 0, 0, 35),
+            Size = UDim2New(1, 0, 0, 34),
             BorderSizePixel = 0,
             ZIndex = 121,
             BackgroundColor3 = Library.Theme.Inline
@@ -13071,16 +13100,25 @@ local Library do
             CornerRadius = UDimNew(0, 5)
         })
 
+        Instances:Create("UIGradient", {
+            Parent = Topbar.Instance,
+            Name = "\0",
+            Rotation = 84,
+            Color = RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, Library.Theme["Dark Gradient"] or FromRGB(211, 211, 211))}
+        }):AddToTheme({Color = function()
+            return RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, Library.Theme["Dark Gradient"] or FromRGB(211, 211, 211))}
+        end})
+
         local Title = Instances:Create("TextLabel", {
             Parent = Topbar.Instance,
             Name = "\0",
             FontFace = Library.Font,
-            Text = "Theme Selector",
+            Text = "Themes",
             TextSize = 14,
             TextColor3 = Library.Theme.Text,
             AnchorPoint = Vector2New(0, 0.5),
             Position = UDim2New(0, 12, 0.5, 0),
-            Size = UDim2New(0, 150, 0, 20),
+            Size = UDim2New(1, -45, 0, 18),
             BackgroundTransparency = 1,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 122
@@ -13091,12 +13129,13 @@ local Library do
             Name = "\0",
             ScaleType = Enum.ScaleType.Fit,
             BorderColor3 = FromRGB(0, 0, 0),
-            Size = UDim2New(0, 17, 0, 17),
+            Size = UDim2New(0, 15, 0, 15),
             AutoButtonColor = false,
             AnchorPoint = Vector2New(1, 0.5),
             Image = "rbxassetid://76001605964586",
+            ImageTransparency = 0.25,
             BackgroundTransparency = 1,
-            Position = UDim2New(1, -9, 0.5, 0),
+            Position = UDim2New(1, -10, 0.5, 0),
             ZIndex = 122,
             BorderSizePixel = 0,
             BackgroundColor3 = FromRGB(255, 255, 255)
@@ -13106,25 +13145,48 @@ local Library do
             Modal.Instance.Visible = false
         end)
 
-        local Scroll = Instances:Create("ScrollingFrame", {
+        local InnerContainer = Instances:Create("Frame", {
             Parent = Modal.Instance,
+            Name = "\0",
+            Position = UDim2New(0, 8, 0, 38),
+            Size = UDim2New(1, -16, 1, -46),
+            BorderSizePixel = 0,
+            ZIndex = 121,
+            BackgroundColor3 = Library.Theme.Background
+        })  InnerContainer:AddToTheme({BackgroundColor3 = "Background"})
+
+        Instances:Create("UICorner", {
+            Parent = InnerContainer.Instance,
+            Name = "\0",
+            CornerRadius = UDimNew(0, 4)
+        })
+
+        local InnerStroke = Instances:Create("UIStroke", {
+            Parent = InnerContainer.Instance,
+            Name = "\0",
+            Thickness = 1,
+            Color = Library.Theme.Border
+        })  InnerStroke:AddToTheme({Color = "Border"})
+
+        local Scroll = Instances:Create("ScrollingFrame", {
+            Parent = InnerContainer.Instance,
             Name = "\0",
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Position = UDim2New(0, 10, 0, 42),
-            Size = UDim2New(1, -20, 1, -50),
+            Position = UDim2New(0, 6, 0, 6),
+            Size = UDim2New(1, -12, 1, -12),
             ScrollBarThickness = 0,
             ScrollBarImageTransparency = 1,
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
             CanvasSize = UDim2New(0, 0, 0, 0),
-            ZIndex = 121
+            ZIndex = 122
         })
 
         local Grid = Instances:Create("UIGridLayout", {
             Parent = Scroll.Instance,
             Name = "\0",
-            CellSize = UDim2New(0, 154, 0, 72),
-            CellPadding = UDim2New(0, 12, 0, 10),
+            CellSize = UDim2New(0, 152, 0, 31),
+            CellPadding = UDim2New(0, 8, 0, 4),
             SortOrder = Enum.SortOrder.LayoutOrder
         })
 
@@ -13140,37 +13202,65 @@ local Library do
                     AutoButtonColor = false,
                     BorderSizePixel = 0,
                     LayoutOrder = orderIdx,
-                    ZIndex = 122,
-                    BackgroundColor3 = Library.Theme.Inline
-                })  Card:AddToTheme({BackgroundColor3 = "Inline"})
+                    ZIndex = 123,
+                    BackgroundTransparency = isCurrent and 0.2 or 1,
+                    BackgroundColor3 = Library.Theme.Element
+                })  Card:AddToTheme({BackgroundColor3 = "Element"})
 
                 Instances:Create("UICorner", {
                     Parent = Card.Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 5)
+                    CornerRadius = UDimNew(0, 4)
                 })
 
                 local CardStroke = Instances:Create("UIStroke", {
                     Parent = Card.Instance,
                     Name = "\0",
                     Thickness = 1,
+                    Transparency = isCurrent and 0.45 or 1,
                     Color = isCurrent and themeDef.Accent or Library.Theme.Border
+                })
+
+                local Indicator = Instances:Create("Frame", {
+                    Parent = Card.Instance,
+                    Name = "\0",
+                    AnchorPoint = Vector2New(0, 0.5),
+                    Position = UDim2New(0, 4, 0.5, 0),
+                    Size = isCurrent and UDim2New(0, 3, 0, 14) or UDim2New(0, 3, 0, 6),
+                    BorderSizePixel = 0,
+                    ZIndex = 125,
+                    BackgroundTransparency = isCurrent and 0 or 1,
+                    BackgroundColor3 = themeDef.Accent
+                })
+                Instances:Create("UICorner", {
+                    Parent = Indicator.Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(1, 0)
                 })
 
                 local PreviewBox = Instances:Create("Frame", {
                     Parent = Card.Instance,
                     Name = "\0",
-                    Position = UDim2New(0, 5, 0, 5),
-                    Size = UDim2New(1, -10, 0, 38),
+                    AnchorPoint = Vector2New(0, 0.5),
+                    Position = UDim2New(0, 12, 0.5, 0),
+                    Size = UDim2New(0, 22, 0, 14),
                     BorderSizePixel = 0,
                     ClipsDescendants = true,
-                    ZIndex = 123,
+                    ZIndex = 124,
                     BackgroundColor3 = themeDef.Background
                 })
                 Instances:Create("UICorner", {
                     Parent = PreviewBox.Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
+                    CornerRadius = UDimNew(0, 3)
+                })
+
+                Instances:Create("UIStroke", {
+                    Parent = PreviewBox.Instance,
+                    Name = "\0",
+                    Thickness = 1,
+                    Transparency = 0.35,
+                    Color = themeDef.Border
                 })
 
                 local PreviewGradFrame = Instances:Create("Frame", {
@@ -13178,54 +13268,59 @@ local Library do
                     Name = "\0",
                     Size = UDim2New(1, 0, 1, 0),
                     BorderSizePixel = 0,
-                    ZIndex = 123,
+                    ZIndex = 124,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })
                 Instances:Create("UIGradient", {
                     Parent = PreviewGradFrame.Instance,
                     Name = "\0",
-                    Rotation = 0,
+                    Rotation = 15,
                     Color = RGBSequence{
                         RGBSequenceKeypoint(0, themeDef.Accent),
-                        RGBSequenceKeypoint(0.5, themeDef.Element),
+                        RGBSequenceKeypoint(0.55, themeDef.Element),
                         RGBSequenceKeypoint(1, themeDef.Background)
                     },
                     Transparency = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 0.22),
-                        NumberSequenceKeypoint.new(1, 0.85)
+                        NumberSequenceKeypoint.new(0, 0.15),
+                        NumberSequenceKeypoint.new(1, 0.78)
                     })
                 })
-
-
 
                 local CardTitle = Instances:Create("TextLabel", {
                     Parent = Card.Instance,
                     Name = "\0",
                     FontFace = Library.Font,
                     Text = themeDef.Name,
-                    TextSize = 13,
-                    TextColor3 = isCurrent and themeDef.Accent or Library.Theme.Text,
-                    AnchorPoint = Vector2New(0, 0),
-                    Position = UDim2New(0, 7, 0, 48),
-                    Size = UDim2New(1, -14, 0, 20),
+                    TextSize = 14,
+                    TextColor3 = Library.Theme.Text,
+                    TextTransparency = isCurrent and 0 or 0.38,
+                    AnchorPoint = Vector2New(0, 0.5),
+                    Position = UDim2New(0, 42, 0.5, 0),
+                    Size = UDim2New(1, -48, 0, 18),
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextTruncate = Enum.TextTruncate.AtEnd,
-                    ZIndex = 123
-                })
+                    ZIndex = 124
+                })  CardTitle:AddToTheme({TextColor3 = "Text"})
 
                 self.CardElements[themeKey] = {
                     Card = Card,
                     Stroke = CardStroke,
+                    Indicator = Indicator,
                     Title = CardTitle
                 }
 
+                local hoverTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
                 Card:OnHover(function()
-                    CardStroke.Instance.Color = themeDef.Accent
+                    if self.CurrentTheme ~= themeKey then
+                        TweenService:Create(Card.Instance, hoverTweenInfo, { BackgroundTransparency = 0.6 }):Play()
+                        TweenService:Create(CardTitle.Instance, hoverTweenInfo, { TextTransparency = 0.08 }):Play()
+                    end
                 end)
                 Card:OnHoverLeave(function()
                     if self.CurrentTheme ~= themeKey then
-                        CardStroke.Instance.Color = Library.Theme.Border
+                        TweenService:Create(Card.Instance, hoverTweenInfo, { BackgroundTransparency = 1 }):Play()
+                        TweenService:Create(CardTitle.Instance, hoverTweenInfo, { TextTransparency = 0.38 }):Play()
                     end
                 end)
 
