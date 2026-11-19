@@ -10,6 +10,36 @@ end
 local cloneref = cloneref or function(o) return o end
 local CoreGui = cloneref and cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui")
 
+local function GetTargetGuiParent(gui)
+    local rGui
+    pcall(function()
+        rGui = CoreGui:FindFirstChild("RobloxGui") or CoreGui.RobloxGui
+    end)
+    local parented = false
+    if rGui then
+        pcall(function()
+            gui.Parent = rGui
+            if gui.Parent == rGui then
+                parented = true
+            end
+        end)
+    end
+    if not parented or not gui.Parent then
+        pcall(function()
+            gui.Parent = CoreGui
+            if gui.Parent == CoreGui then
+                parented = true
+            end
+        end)
+    end
+    if not parented or not gui.Parent then
+        pcall(function()
+            gui.Parent = game:GetService("CoreGui")
+        end)
+    end
+    return gui.Parent
+end
+
 if getgenv().Library and getgenv().Library.Unload then
     pcall(function() getgenv().Library:Unload() end)
 end
@@ -165,31 +195,6 @@ local Options, MiscOptions do
                 Fonts[name] = Font.fromEnum(Enum.Font.Gotham)
             end
         end
-    end
-
-    local function GetTargetGuiParent(gui)
-        local rGui
-        pcall(function()
-            rGui = CoreGui:FindFirstChild("RobloxGui") or CoreGui.RobloxGui
-        end)
-        local parented = false
-        if rGui then
-            pcall(function()
-                gui.Parent = rGui
-                if gui.Parent == rGui then
-                    parented = true
-                end
-            end)
-        end
-        if not parented or not gui.Parent then
-            pcall(function()
-                gui.Parent = CoreGui
-                if gui.Parent == CoreGui then
-                    parented = true
-                end
-            end)
-        end
-        return gui.Parent
     end
 
     local espScreenGui = Instance.new("ScreenGui")
