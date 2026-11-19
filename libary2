@@ -137,7 +137,7 @@ local Options, MiscOptions do
 
     local Fonts = {}; do
         local function RegisterFont(Name, Weight, Style, Asset)
-            if not isfile(Asset.Id) then
+            if not isfile(Asset.Id) and Asset.Font then
                 writefile(Asset.Id, Asset.Font)
             end
 
@@ -171,10 +171,17 @@ local Options, MiscOptions do
         }
 
         for name, suffix in FontNames do
-            local success, fontData = pcall(function()
-                return game:HttpGet("https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/" .. suffix)
+            local hasLocal = false
+            pcall(function()
+                hasLocal = isfile and isfile(suffix)
             end)
-            if success and fontData then
+            local success, fontData = true, nil
+            if not hasLocal then
+                success, fontData = pcall(function()
+                    return game:HttpGet("https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/" .. suffix)
+                end)
+            end
+            if (hasLocal or (success and fontData)) then
                 local regOk, registeredFont = pcall(RegisterFont, name, 400, "Normal", {
                     Id = suffix,
                     Font = fontData,
@@ -212,12 +219,13 @@ local Options, MiscOptions do
         espCache.Parent = espScreenGui.Parent or CoreGui
     end)
 
-    getgenv().Esp = {
+    local Esp = {
         Players = {},
         ScreenGui = espScreenGui,
         Cache = espCache,
         Connections = {},
-    }; do
+    }
+    getgenv().Esp = Esp; do
         Esp.ScreenGui.IgnoreGuiInset = true
         Esp.ScreenGui.DisplayOrder = 9999999
         Esp.ScreenGui.ResetOnSpawn = false
@@ -255,8 +263,11 @@ local Options, MiscOptions do
         end
 
         function Esp:Connection(signal, callback)
-            local Connection = signal:Connect(callback)
-            Esp.Connections[#Esp.Connections + 1] = Connection
+            if not signal then return end
+            local ok, Connection = pcall(function() return signal:Connect(callback) end)
+            if ok and Connection then
+                Esp.Connections[#Esp.Connections + 1] = Connection
+            end
 
             return Connection
         end
@@ -893,18 +904,26 @@ local Options, MiscOptions do
             end
 
             Data.RefreshDescendants = function()
-                local Character = (typechar and player) or player.Character or player.CharacterAdded:Wait()
-                local Humanoid = Character:FindFirstChild("Humanoid") or Character:WaitForChild( "Humanoid" )
+                task.spawn(function()
+                    local Character = (typechar and player) or player.Character or (player.CharacterAdded and player.CharacterAdded:Wait())
+                    if not Character then
+                        return
+                    end
+                    local Humanoid = Character:FindFirstChildOfClass("Humanoid") or Character:FindFirstChild("Humanoid") or Character:WaitForChild("Humanoid", 5)
+                    if not Humanoid then
+                        return
+                    end
 
-                Data.Info.Character = typechar and player or Character
-                Data.Info.Humanoid = Humanoid
-                Data.Info.rootpart = Humanoid.RootPart
+                    Data.Info.Character = typechar and player or Character
+                    Data.Info.Humanoid = Humanoid
+                    Data.Info.rootpart = Humanoid.RootPart or Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart
 
-                Esp:Connection(Humanoid.HealthChanged, Data.HealthChanged)
-                Esp:Connection(Character.ChildAdded, Data.ToolAdded)
-                Esp:Connection(Character.ChildRemoved, Data.ToolAdded)
+                    Esp:Connection(Humanoid.HealthChanged, Data.HealthChanged)
+                    Esp:Connection(Character.ChildAdded, Data.ToolAdded)
+                    Esp:Connection(Character.ChildRemoved, Data.ToolAdded)
 
-                Data.HealthChanged(Data.Info.Humanoid.Health)
+                    Data.HealthChanged(Data.Info.Humanoid.Health)
+                end)
             end
 
             Data.Destroy = function()
@@ -919,8 +938,9 @@ local Options, MiscOptions do
             end
 
             Data.RefreshDescendants()
-            Esp:Connection(Data.Info.Character.ChildAdded, Data.ToolAdded)
-            Esp:Connection(player.CharacterAdded, Data.RefreshDescendants)
+            if not typechar and player.CharacterAdded then
+                Esp:Connection(player.CharacterAdded, Data.RefreshDescendants)
+            end
 
             for _,ItemParentor in {Items.Left, Items.Right, Items.Top, Items.Bottom} do
                 Esp:Connection(ItemParentor.ChildAdded, function()
@@ -1321,24 +1341,32 @@ local Options, MiscOptions do
         end
     end
 
-    for _,player in Players:GetPlayers() do
-        if player == Players.LocalPlayer then continue end
-        Esp.CreateObject(player)
-    end
+    task.spawn(function()
+        for _,player in Players:GetPlayers() do
+            if player == Players.LocalPlayer then continue end
+            task.spawn(function()
+                pcall(Esp.CreateObject, player)
+            end)
+        end
 
-    Esp:Connection(Players.PlayerRemoving, Esp.RemovePlayer)
-    Esp:Connection(Players.PlayerAdded, function(player)
-        Esp.CreateObject(player)
         for index,value in MiscOptions do
-            Options[index] = value
+            pcall(function() Options[index] = value end)
         end
     end)
 
-    Esp.Loop = RunService:BindToRenderStep("Run Loop", 0, Esp.Update)
+    Esp:Connection(Players.PlayerRemoving, Esp.RemovePlayer)
+    Esp:Connection(Players.PlayerAdded, function(player)
+        task.spawn(function()
+            pcall(Esp.CreateObject, player)
+            for index,value in MiscOptions do
+                pcall(function() Options[index] = value end)
+            end
+        end)
+    end)
 
-    for index,value in MiscOptions do
-        Options[index] = value
-    end
+    pcall(function()
+        Esp.Loop = RunService:BindToRenderStep("Run Loop", 0, Esp.Update)
+    end)
 end
 
 local Library do
